@@ -39,7 +39,7 @@ public class ThoughtProcessLogger
         Entries.Add(new LogEntry
         {
             Type = LogEntryType.SystemPrompt,
-            Content = $"System Prompt (Mode: {mode}):\n{prompt}"
+            Content = $"System Prompt (Mode: {mode.GetIdentifier()}):\n{prompt}"
         });
     }
 

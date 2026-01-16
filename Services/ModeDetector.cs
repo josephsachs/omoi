@@ -129,7 +129,7 @@ public class ModeDetector
     {
         if (recentMessages.Count == 0)
         {
-            return ConversationMode.Empower;
+            return ModeRegistry.GetDefaultMode();
         }
 
         var lastMessage = recentMessages.TakeLast(1).ToList();
@@ -177,11 +177,11 @@ public class ModeDetector
         {
             var isClear = await ModeQuery(lastMessage, MODE_SELECT_IS_STATEMENT_CLEAR); 
 
-            return isClear ? ConversationMode.Opine : ConversationMode.Investigate;
+            return isClear ? new OpineMode() : new InvestigateMode();
         } 
         else 
         {
-            return ConversationMode.Opine;
+            return new OpineMode();
         }
     }
 
@@ -191,7 +191,7 @@ public class ModeDetector
 
         if (isJoking) 
         {
-            return ConversationMode.Amuse;
+            return new AmuseMode();
         }
 
         var isPersonal = await ModeQuery(lastMessage, MODE_SELECT_IS_PERSONAL);
@@ -199,7 +199,7 @@ public class ModeDetector
 
         if (isPersonal) 
         {
-            return isReasonable ? ConversationMode.Empower : ConversationMode.Opine;
+            return isReasonable ? new EmpowerMode() : new OpineMode();
         } 
         else 
         {
@@ -207,10 +207,10 @@ public class ModeDetector
 
             if (!isClear) 
             {
-                return ConversationMode.Investigate;
+                return new InvestigateMode();
             }
 
-            return isReasonable ? ConversationMode.Opine : ConversationMode.Critique;
+            return isReasonable ? new OpineMode() : new CritiqueMode();
         }
     }
 
@@ -223,41 +223,18 @@ public class ModeDetector
         {
             if (isClear) 
             {
-                return ConversationMode.Investigate;
+                return new InvestigateMode();
             } 
             else 
             {
                 var isReasonable = await ModeQuery(lastMessage, MODE_SELECT_IS_REASONABLE);
 
-                return isReasonable ? ConversationMode.Empower : ConversationMode.Critique;
+                return isReasonable ? new EmpowerMode() : new CritiqueMode();
             }
         } 
         else 
         {
-            return isClear ? ConversationMode.Opine : ConversationMode.Investigate;
+            return isClear ? new OpineMode() : new InvestigateMode();
         }
-    }
-
-    public static string GetSystemPromptForMode(ConversationMode mode)
-    {
-        return mode switch
-        {
-            ConversationMode.Empower => 
-                "The user is sharing thoughts and ideas. You encourage and support where appropriate. You are helpful and positive, encouraging or supportive, helping to elaborate and lightly cheerleading.",
-            
-            ConversationMode.Investigate => 
-                "The user is questioning, or exploring a space with unknowns. You ask questions, seek definitions, and help isolate variables and fill in unknown values so that you can respond with confidence.",
-            
-            ConversationMode.Opine => 
-                "The user is sharing an opinion in a conversational way. You may share one in return whether that be agreement, a contrasting viewpoint, a different subjective take, something tangential or something speculative and uncommitted. Little rigor is required.",
-            
-            ConversationMode.Critique => 
-                "The user is expressing something dubious. You challenge this, play devil's advocate, and/or apply tough-minded critical analysis. The idea needs, at minimum, to be approached with skepticism, and might require clear pushback.",
-
-            ConversationMode.Amuse => 
-                "The user is being humorous. Respond unseriously. Your sense of humor, when whimsical, is not zany; when ironic, is not smirking; when fey, is not pat.",
-            
-            _ => "Respond as you see fit."
-        };
     }
 }

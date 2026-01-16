@@ -24,7 +24,7 @@ public class MainWindowViewModel : ViewModelBase
 
     private string _inputMessage = string.Empty;
     private bool _isSending;
-    private ConversationMode _currentMode = ConversationMode.Empower;
+    private ConversationMode _currentMode = ModeRegistry.GetDefaultMode();
     private string _selectedModelId = string.Empty;
     private string _thoughtModel = string.Empty;
     private string _memoryModel = string.Empty;
@@ -274,7 +274,7 @@ public class MainWindowViewModel : ViewModelBase
         }
 
         var chatMessages = Messages.ToList();
-        _chatService.LoadConversation(chatMessages);
+        _chatService.LoadConversation(chatMessages, CurrentMode.GetIdentifier());
 
         _editingMessage = null;
         this.RaisePropertyChanged(nameof(IsSending));
@@ -286,7 +286,7 @@ public class MainWindowViewModel : ViewModelBase
         {
             Content = editedContent,
             IsUser = true,
-            Mode = CurrentMode,
+            ModeIdentifier = CurrentMode.GetIdentifier(),
             Timestamp = DateTime.Now
         };
         Messages.Add(userMessage);
@@ -295,7 +295,7 @@ public class MainWindowViewModel : ViewModelBase
         {
             Content = "...",
             IsUser = false,
-            Mode = CurrentMode,
+            ModeIdentifier = CurrentMode.GetIdentifier(),
             IsPending = true,
             Timestamp = DateTime.Now
         };
@@ -307,7 +307,7 @@ public class MainWindowViewModel : ViewModelBase
             
             placeholder.Content = response.Content;
             placeholder.IsPending = false;
-            placeholder.Mode = newMode;
+            placeholder.ModeIdentifier = newMode.GetIdentifier();
             placeholder.Timestamp = response.Timestamp;
             
             CurrentMode = newMode;
@@ -334,7 +334,7 @@ public class MainWindowViewModel : ViewModelBase
         {
             Content = messageText,
             IsUser = true,
-            Mode = CurrentMode,
+            ModeIdentifier = CurrentMode.GetIdentifier(),
             Timestamp = DateTime.Now
         };
         Messages.Add(userMessage);
@@ -343,7 +343,7 @@ public class MainWindowViewModel : ViewModelBase
         {
             Content = "...",
             IsUser = false,
-            Mode = CurrentMode,
+            ModeIdentifier = CurrentMode.GetIdentifier(),
             IsPending = true,
             Timestamp = DateTime.Now
         };
@@ -355,7 +355,7 @@ public class MainWindowViewModel : ViewModelBase
             
             placeholder.Content = response.Content;
             placeholder.IsPending = false;
-            placeholder.Mode = newMode;
+            placeholder.ModeIdentifier = newMode.GetIdentifier();
             placeholder.Timestamp = response.Timestamp;
             
             CurrentMode = newMode;
@@ -380,14 +380,14 @@ public class MainWindowViewModel : ViewModelBase
         await AutoSaveAsync();
         Messages.Clear();
         _chatService.ClearConversation();
-        CurrentMode = ConversationMode.Empower;
+        CurrentMode = ModeRegistry.GetDefaultMode();
     }
 
     public async Task SaveConversationAsync(string filepath)
     {
         await _conversationService.SaveConversationAsync(
             new System.Collections.Generic.List<Message>(Messages),
-            CurrentMode,
+            CurrentMode.GetIdentifier(),
             filepath);
     }
 
@@ -403,8 +403,8 @@ public class MainWindowViewModel : ViewModelBase
             {
                 Messages.Add(msg);
             }
-            CurrentMode = data.CurrentMode;
-            _chatService.LoadConversation(data.Messages);
+            CurrentMode = ModeRegistry.GetMode(data.CurrentModeIdentifier);
+            _chatService.LoadConversation(data.Messages, data.CurrentModeIdentifier);
         }
     }
 
@@ -414,7 +414,7 @@ public class MainWindowViewModel : ViewModelBase
         {
             await _conversationService.AutoSaveAsync(
                 new System.Collections.Generic.List<Message>(Messages),
-                CurrentMode);
+                CurrentMode.GetIdentifier());
         }
     }
 
@@ -428,8 +428,8 @@ public class MainWindowViewModel : ViewModelBase
             {
                 Messages.Add(msg);
             }
-            CurrentMode = data.CurrentMode;
-            _chatService.LoadConversation(data.Messages);
+            CurrentMode = ModeRegistry.GetMode(data.CurrentModeIdentifier);
+            _chatService.LoadConversation(data.Messages, data.CurrentModeIdentifier);
         }
     }
 

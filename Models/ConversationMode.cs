@@ -1,10 +1,8 @@
 namespace Omoi.Models;
 
-public enum ConversationMode
+public abstract class ConversationMode
 {
-    Empower,    // 力
-    Investigate, // 究
-    Opine,       // 思
-    Critique,     // 争
-    Amuse       // 楽
+    public abstract string GetIdentifier();
+    public abstract string GetSymbol();
+    public abstract string GetSystemPrompt();
 }

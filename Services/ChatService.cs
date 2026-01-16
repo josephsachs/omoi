@@ -16,7 +16,7 @@ public class ChatService
     private readonly ConversationService _conversationService;
 
     private List<Message> _messages = new();
-    private ConversationMode _currentMode = ConversationMode.Empower;
+    private ConversationMode _currentMode = ModeRegistry.GetDefaultMode();
 
     public IReadOnlyList<Message> Messages => _messages.AsReadOnly();
     public ConversationMode CurrentMode => _currentMode;
@@ -47,7 +47,7 @@ public class ChatService
         {
             Content = userMessage,
             IsUser = true,
-            Mode = _currentMode,
+            ModeIdentifier = _currentMode.GetIdentifier(),
             Timestamp = DateTime.Now
         };
 
@@ -56,11 +56,11 @@ public class ChatService
         var newMode = await _modeDetector.DetectMode(_messages);
         _currentMode = newMode;
 
-        var modePrompt = ModeDetector.GetSystemPromptForMode(newMode);
+        var modePrompt = newMode.GetSystemPrompt();
         
         var systemPrompt = await _contextBuilder.BuildSystemPromptAsync(modePrompt, userMessage);
         
-        _logger.LogSystemPrompt(newMode, systemPrompt);
+        _logger.LogSystemPrompt(_currentMode, systemPrompt);
 
         var contextMessages = await _contextBuilder.BuildContextAsync(_messages);
 
@@ -81,7 +81,7 @@ public class ChatService
         {
             Content = responseText,
             IsUser = false,
-            Mode = newMode,
+            ModeIdentifier = newMode.GetIdentifier(),
             Timestamp = DateTime.Now
         };
 
@@ -91,7 +91,7 @@ public class ChatService
         
         if (memoriesWereStored)
         {
-            await _conversationService.AutoSaveAsync(_messages, _currentMode);
+            await _conversationService.AutoSaveAsync(_messages, _currentMode.GetIdentifier());
         }
 
         return (responseMsg, newMode);
@@ -100,15 +100,13 @@ public class ChatService
     public void ClearConversation()
     {
         _messages.Clear();
-        _currentMode = ConversationMode.Empower;
+        _currentMode = ModeRegistry.GetDefaultMode();
         _logger.Clear();
     }
 
-    public void LoadConversation(List<Message> messages)
+    public void LoadConversation(List<Message> messages, string currentModeIdentifier)
     {
         _messages = new List<Message>(messages);
-        _currentMode = messages.Count > 0
-            ? messages[^1].Mode
-            : ConversationMode.Empower;
+        _currentMode = ModeRegistry.GetMode(currentModeIdentifier);
     }
 }

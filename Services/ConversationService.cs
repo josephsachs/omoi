@@ -23,14 +23,14 @@ public class ConversationService
 
     public async Task SaveConversationAsync(
         List<Message> messages, 
-        ConversationMode currentMode, 
+        string currentModeIdentifier, 
         string filepath)
     {
         var data = new ConversationData
         {
             Messages = messages,
             SavedAt = DateTime.Now,
-            CurrentMode = currentMode
+            CurrentModeIdentifier = currentModeIdentifier
         };
 
         var json = JsonSerializer.Serialize(data, new JsonSerializerOptions 
@@ -50,9 +50,9 @@ public class ConversationService
         return JsonSerializer.Deserialize<ConversationData>(json);
     }
 
-    public async Task AutoSaveAsync(List<Message> messages, ConversationMode currentMode)
+    public async Task AutoSaveAsync(List<Message> messages, string currentModeIdentifier)
     {
-        await SaveConversationAsync(messages, currentMode, _autoSavePath);
+        await SaveConversationAsync(messages, currentModeIdentifier, _autoSavePath);
     }
 
     public async Task<ConversationData?> LoadAutoSaveAsync()

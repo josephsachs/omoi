@@ -7,5 +7,5 @@ public class ConversationData
 {
     public List<Message> Messages { get; set; } = new();
     public DateTime SavedAt { get; set; }
-    public ConversationMode CurrentMode { get; set; }
+    public string CurrentModeIdentifier { get; set; } = "Empower";
 }

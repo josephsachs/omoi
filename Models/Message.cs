@@ -8,7 +8,7 @@ public class Message : ReactiveObject
 {
     private string _content = string.Empty;
     private bool _isUser;
-    private ConversationMode _mode;
+    private string _modeIdentifier = "Empower";
     private DateTime _timestamp = DateTime.Now;
     private bool _isPending;
     private bool _isEditing;
@@ -34,13 +34,13 @@ public class Message : ReactiveObject
         }
     }
 
-    [JsonPropertyName("Mode")]
-    public ConversationMode Mode
+    [JsonPropertyName("ModeIdentifier")]
+    public string ModeIdentifier
     {
-        get => _mode;
+        get => _modeIdentifier;
         set
         {
-            this.RaiseAndSetIfChanged(ref _mode, value);
+            this.RaiseAndSetIfChanged(ref _modeIdentifier, value);
             this.RaisePropertyChanged(nameof(IconText));
         }
     }
@@ -104,15 +104,17 @@ public class Message : ReactiveObject
     public string EditButtonIcon => IsEditing ? "✓" : "✏️";
 
     [JsonIgnore]
-    public string IconText => IsPending ? "" : (IsUser ? "私" : Mode switch
+    public string IconText
     {
-        ConversationMode.Empower => "力",
-        ConversationMode.Investigate => "究",
-        ConversationMode.Opine => "思",
-        ConversationMode.Critique => "批",
-        ConversationMode.Amuse => "楽",
-        _ => "?"
-    });
+        get
+        {
+            if (IsPending) return "";
+            if (IsUser) return "私";
+            
+            var mode = ModeRegistry.GetMode(ModeIdentifier);
+            return mode.GetSymbol();
+        }
+    }
 
     [JsonIgnore]
     public string IconColor => IsUser ? "#A8A8A8" : "#90EE90";
