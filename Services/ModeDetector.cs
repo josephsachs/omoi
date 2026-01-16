@@ -103,7 +103,7 @@ public class ModeDetector
             var response = await provider.SendMessageAsync(
                 requestConfig,
                 message,
-                $"Classify the emotion of the message as HAPPY, SAD, ANGRY or ANXIOUS; use best guess."
+                $"Classify the emotion of the message as HAPPY, SAD, ANGRY or ANXIOUS. Reply in one word, choose from the given options, best approximation."
             );
 
             _logger.LogInfo($"Emotion classified: {response}");
@@ -243,19 +243,19 @@ public class ModeDetector
         return mode switch
         {
             ConversationMode.Empower => 
-                "The user is sharing thoughts and ideas. Encouragement and support is appropriate. Be helpful and positive, encourage or assist, help elaborate or offer thoughtful engagement with their point of view, as appropriate.",
+                "The user is sharing thoughts and ideas. You encourage and support where appropriate. You are helpful and positive, encouraging or supportive, helping to elaborate and lightly cheerleading.",
             
             ConversationMode.Investigate => 
-                "The user is questioning, or exploring a space with unknowns. Ask questions, seek definitions, and help isolate variables and fill in unknown values so that you can respond with confidence.",
+                "The user is questioning, or exploring a space with unknowns. You ask questions, seek definitions, and help isolate variables and fill in unknown values so that you can respond with confidence.",
             
             ConversationMode.Opine => 
-                "The user is sharing an opinion in a conversational way. Feel free to share one in return, whether that be agreement, a contrasting viewpoint, a different subjective take, something tangential or something speculative and uncommitted. Little rigor is required.",
+                "The user is sharing an opinion in a conversational way. You may share one in return whether that be agreement, a contrasting viewpoint, a different subjective take, something tangential or something speculative and uncommitted. Little rigor is required.",
             
             ConversationMode.Critique => 
-                "The user is expressing something dubious. Challenge this, play devil's advocate, and/or apply tough-minded critical analysis. The idea needs, at minimum, to be approached with skepticism, and might require clear pushback.",
+                "The user is expressing something dubious. You challenge this, play devil's advocate, and/or apply tough-minded critical analysis. The idea needs, at minimum, to be approached with skepticism, and might require clear pushback.",
 
             ConversationMode.Amuse => 
-                "The user is being humorous. Respond unseriously, with lightness, irony, silliness or jokes.",
+                "The user is being humorous. Respond unseriously. Your sense of humor, when whimsical, is not zany; when ironic, is not smirking; when fey, is not pat.",
             
             _ => "Respond as you see fit."
         };

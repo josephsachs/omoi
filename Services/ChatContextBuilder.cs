@@ -7,10 +7,10 @@ namespace Omoi.Services;
 
 public class ChatContextBuilder
 {
-    private const int MAX_CONTEXT_MESSAGES = 20;
-    private const int TOP_K_MEMORIES = 4;
+    private const int MAX_CONTEXT_MESSAGES = 42;
+    private const int TOP_K_MEMORIES = 5;
 
-    private const float SIMILARITY_THRESHOLD = 0.15f;
+    private const float SIMILARITY_THRESHOLD = 0.12f;
 
     private readonly VectorProviderResolver _vectorProviderResolver;
     private readonly VectorStorageResolver _vectorStorageResolver;
@@ -43,8 +43,10 @@ public class ChatContextBuilder
     {
         var config = await _configService.LoadConfigAsync();
 
+        var personalityPrompt = "You are Omoi (思), a social chatbot.";
+
         // Start with the mode instructions
-        var systemPrompt = $"<instructions>\n{modePrompt}\n</instructions>";
+        var systemPrompt = $"<instructions>\n{personalityPrompt}\n{modePrompt}\n</instructions>";
 
         // Try to retrieve and add memories
         if (string.IsNullOrEmpty(config.VectorModel) || 
