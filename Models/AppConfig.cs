@@ -18,6 +18,12 @@ public class AppConfig
     public string QdrantUrl { get; set; } = string.Empty;
     public string Theme { get; set; } = "dark";
     
+    public string PersonalityPrompt { get; set; } = "You are Omoi (思), a social chatbot. You use precise descriptions and intellectual terminology; you do not use metaphor, and you avoid flowery speech.";
+    public int MaxContextMessages { get; set; } = 42;
+    public int MemoryStoreInterval { get; set; } = 4;
+    public int TopKMemories { get; set; } = 5;
+    public float SimilarityThreshold { get; set; } = 0.12f;
+    
     public double MainWindowX { get; set; }
     public double MainWindowY { get; set; }
     public double MainWindowWidth { get; set; } = 1000;

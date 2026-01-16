@@ -1,0 +1,57 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:Omoi.ViewModels"
+        x:Class="Omoi.Views.ChatSettingsWindow"
+        x:DataType="vm:ChatSettingsViewModel"
+        Title="Chat Settings"
+        Width="600" Height="500"
+        WindowStartupLocation="CenterOwner">
+
+    <ScrollViewer Padding="20">
+        <StackPanel Spacing="20">
+            
+            <TextBlock Text="Conversation" 
+                       FontWeight="Bold" 
+                       FontSize="16"/>
+            
+            <StackPanel Spacing="10">
+                <TextBlock Text="Style" FontWeight="SemiBold"/>
+                <TextBox Text="{Binding PersonalityPrompt}"
+                         AcceptsReturn="True"
+                         TextWrapping="Wrap"
+                         Height="80"/>
+            </StackPanel>
+
+            <StackPanel Spacing="10">
+                <TextBlock Text="Max Context Messages" FontWeight="SemiBold"/>
+                <TextBox Text="{Binding MaxContextMessages}"
+                         Watermark="42"/>
+            </StackPanel>
+
+            <Separator/>
+
+            <TextBlock Text="Memory" 
+                       FontWeight="Bold" 
+                       FontSize="16"/>
+
+            <StackPanel Spacing="10">
+                <TextBlock Text="Memory Store Interval (messages)" FontWeight="SemiBold"/>
+                <TextBox Text="{Binding MemoryStoreInterval}"
+                         Watermark="4"/>
+            </StackPanel>
+
+            <StackPanel Spacing="10">
+                <TextBlock Text="Top K Memories" FontWeight="SemiBold"/>
+                <TextBox Text="{Binding TopKMemories}"
+                         Watermark="5"/>
+            </StackPanel>
+
+            <StackPanel Spacing="10">
+                <TextBlock Text="Similarity Threshold" FontWeight="SemiBold"/>
+                <TextBox Text="{Binding SimilarityThreshold}"
+                         Watermark="0.12"/>
+            </StackPanel>
+
+        </StackPanel>
+    </ScrollViewer>
+</Window>

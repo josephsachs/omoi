@@ -24,6 +24,7 @@
                 <!-- Model items will be added dynamically in code-behind -->
             </MenuItem>
             <MenuItem Header="_Settings">
+                <MenuItem Header="_Chat..." Click="ShowChatSettings_Click"/>
                 <MenuItem Header="_Integrations..." Click="ShowSettings_Click"/>
             </MenuItem>
             <MenuItem Header="_View">

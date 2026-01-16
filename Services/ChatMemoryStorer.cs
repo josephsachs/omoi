@@ -14,8 +14,6 @@ public class ChatMemoryStorer
     private readonly ThoughtProcessLogger _logger;
     private readonly ConfigService _configService;
 
-    private const int MEMORY_STORE_INTERVAL = 4;
-
     public ChatMemoryStorer(
         ModelProviderResolver providerResolver,
         VectorProviderResolver vectorProviderResolver,
@@ -34,7 +32,7 @@ public class ChatMemoryStorer
     {
         var unmemoizedMessages = GetUnmemoizedMessages(allMessages);
         
-        if (!ShouldProcessMemories(unmemoizedMessages))
+        if (!await ShouldProcessMemoriesAsync(unmemoizedMessages))
             return false;
 
         _logger.LogInfo($"Processing {unmemoizedMessages.Count} messages into memory...");
@@ -102,9 +100,12 @@ public class ChatMemoryStorer
         return allMessages.Where(m => !m.IsMemorized).ToList();
     }
 
-    private bool ShouldProcessMemories(List<Message> unmemoizedMessages)
+    private async Task<bool> ShouldProcessMemoriesAsync(List<Message> unmemoizedMessages)
     {
-        return unmemoizedMessages.Count >= MEMORY_STORE_INTERVAL;
+        var config = await _configService.LoadConfigAsync();
+        var memoryStoreInterval = config.MemoryStoreInterval;
+        
+        return unmemoizedMessages.Count >= memoryStoreInterval;
     }
 
     private string FormatAsTranscript(List<Message> messages)

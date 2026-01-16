@@ -7,11 +7,6 @@ namespace Omoi.Services;
 
 public class ChatContextBuilder
 {
-    private const int MAX_CONTEXT_MESSAGES = 42;
-    private const int TOP_K_MEMORIES = 5;
-
-    private const float SIMILARITY_THRESHOLD = 0.12f;
-
     private readonly VectorProviderResolver _vectorProviderResolver;
     private readonly VectorStorageResolver _vectorStorageResolver;
     private readonly ConfigService _configService;
@@ -29,26 +24,27 @@ public class ChatContextBuilder
         _logger = logger;
     }
 
-    public List<Message> BuildContext(List<Message> allMessages)
+    public async Task<List<Message>> BuildContextAsync(List<Message> allMessages)
     {
-        if (allMessages.Count <= MAX_CONTEXT_MESSAGES)
+        var config = await _configService.LoadConfigAsync();
+        var maxContextMessages = config.MaxContextMessages;
+
+        if (allMessages.Count <= maxContextMessages)
         {
             return allMessages;
         }
 
-        return allMessages.TakeLast(MAX_CONTEXT_MESSAGES).ToList();
+        return allMessages.TakeLast(maxContextMessages).ToList();
     }
 
     public async Task<string> BuildSystemPromptAsync(string modePrompt, string userMessage)
     {
         var config = await _configService.LoadConfigAsync();
 
-        var personalityPrompt = "You are Omoi (思), a social chatbot.";
+        var personalityPrompt = config.PersonalityPrompt;
 
-        // Start with the mode instructions
         var systemPrompt = $"<instructions>\n{personalityPrompt}\n{modePrompt}\n</instructions>";
 
-        // Try to retrieve and add memories
         if (string.IsNullOrEmpty(config.VectorModel) || 
             string.IsNullOrEmpty(config.MemoryModel))
         {
@@ -62,7 +58,9 @@ public class ChatContextBuilder
             var embedding = await vectorProvider.GetEmbeddingAsync(userMessage);
 
             var storage = _vectorStorageResolver.GetStorage(config.SelectedVectorStorage);
-            var memories = await storage.SearchSimilarMemoriesAsync(embedding, TOP_K_MEMORIES, threshold: SIMILARITY_THRESHOLD);
+            var topK = config.TopKMemories;
+            var threshold = config.SimilarityThreshold;
+            var memories = await storage.SearchSimilarMemoriesAsync(embedding, topK, threshold);
 
             if (memories.Count == 0)
             {
@@ -76,7 +74,6 @@ public class ChatContextBuilder
                 _logger.LogInfo($"  - [{memory.Similarity:F3}] {TruncateForLog(memory.Content)}");
             }
 
-            // Add memories in XML format
             var memoryXml = FormatMemoriesAsXml(memories);
             systemPrompt += $"\n\n{memoryXml}";
 

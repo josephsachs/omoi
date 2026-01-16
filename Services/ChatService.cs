@@ -56,16 +56,13 @@ public class ChatService
         var newMode = await _modeDetector.DetectMode(_messages);
         _currentMode = newMode;
 
-        // Get the mode-specific instruction text
         var modePrompt = ModeDetector.GetSystemPromptForMode(newMode);
         
-        // Build the full system prompt with instructions and memories in XML format
         var systemPrompt = await _contextBuilder.BuildSystemPromptAsync(modePrompt, userMessage);
         
-        // Log the final augmented prompt
         _logger.LogSystemPrompt(newMode, systemPrompt);
 
-        var contextMessages = _contextBuilder.BuildContext(_messages);
+        var contextMessages = await _contextBuilder.BuildContextAsync(_messages);
 
         var provider = _providerResolver.GetProviderForModel(config.ConversationalModel);
         var requestConfig = new ModelRequestConfig

@@ -515,6 +515,19 @@ public partial class MainWindow : Window
         }
     }
 
+    private async void ShowChatSettings_Click(object? sender, RoutedEventArgs e)
+    {
+        if (DataContext is MainWindowViewModel viewModel)
+        {
+            var chatSettingsWindow = new ChatSettingsWindow
+            {
+                DataContext = new ChatSettingsViewModel(viewModel.ConfigService)
+            };
+            
+            await chatSettingsWindow.ShowDialog(this);
+        }
+    }
+
     private async void ShowSettings_Click(object? sender, RoutedEventArgs e)
     {
         if (DataContext is MainWindowViewModel viewModel)
