@@ -5,6 +5,7 @@ using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Omoi.Services;
+using Omoi.Services.Agents;
 using Omoi.ViewModels;
 using Omoi.Views;
 
@@ -36,24 +37,18 @@ public partial class App : Application
             var vectorStorageResolver = new VectorStorageResolver(supabaseClient, qdrantClient);
             
             var contextBuilder = new ChatContextBuilder(vectorProviderResolver, vectorStorageResolver, configService, logger);
-            
             var modeDetector = new ModeDetector(providerResolver, logger, configService);
-            var chatMemoryStorer = new ChatMemoryStorer(
-                providerResolver, 
-                vectorProviderResolver, 
-                vectorStorageResolver, 
-                logger, 
-                configService
+
+            var quadeAgent = new QuadeAgent(
+                providerResolver,
+                vectorProviderResolver,
+                vectorStorageResolver,
+                configService,
+                logger,
+                modeDetector,
+                contextBuilder
             );
-            var chatService = new ChatService(
-                providerResolver, 
-                modeDetector, 
-                chatMemoryStorer, 
-                configService, 
-                logger, 
-                contextBuilder,
-                conversationService
-            );
+            var chatService = new ChatService(quadeAgent, conversationService, logger);
 
             var hasApiKey = await credentialsService.HasApiKeyAsync(CredentialsService.ANTHROPIC);
             
