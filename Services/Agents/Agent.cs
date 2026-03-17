@@ -31,12 +31,18 @@ public abstract class Agent
 
     public abstract Task<AgentResult> Handle(AgentInput input);
 
+    public virtual Task<AgentResult?> Reflect(IReadOnlyList<Message> history) =>
+        Task.FromResult<AgentResult?>(null);
+
     protected async Task<string> Query(string prompt, IReadOnlyList<Message> context)
     {
         var config = await ConfigService.LoadConfigAsync();
         var provider = ProviderResolver.GetProviderForModel(config.ThoughtModel);
-        var requestConfig = new ModelRequestConfig { Model = config.ThoughtModel, MaxTokens = 1 };
-        return await provider.SendMessageAsync(requestConfig, new List<Message>(context), prompt);
+        var requestConfig = new ModelRequestConfig { Model = config.ThoughtModel, MaxTokens = 10 };
+        Logger.LogInfo($"[Query] {prompt}");
+        var result = await provider.SendMessageAsync(requestConfig, new List<Message>(context), prompt);
+        Logger.LogInfo($"[Query result] {result.Trim()}");
+        return result;
     }
 
     protected async Task<string> Generate(ModelType modelType, IReadOnlyList<Message> context, string systemPrompt)
@@ -53,6 +59,76 @@ public abstract class Agent
         var provider = ProviderResolver.GetProviderForModel(modelId);
         var requestConfig = new ModelRequestConfig { Model = modelId, MaxTokens = 4096 };
         return await provider.SendMessageAsync(requestConfig, new List<Message>(context), systemPrompt);
+    }
+
+    protected async Task<string> RunDialogue(DialogueConfig config)
+    {
+        const int maxTurns = 10;
+        var turns = new List<(Participant? Speaker, string Content)>
+        {
+            (null, config.InitialMessage)
+        };
+
+        Logger.LogInfo("[Dialogue] Starting");
+
+        while (turns.Count <= maxTurns)
+        {
+            var history = ToMessages(turns);
+            Logger.LogInfo($"[Dialogue] Turn {turns.Count - 1}, checking termination...");
+
+            if (await config.ShouldTerminate(history))
+            {
+                Logger.LogInfo("[Dialogue] Terminating");
+                break;
+            }
+
+            var speaker = config.NextSpeaker(history);
+            Logger.LogInfo($"[Dialogue] Speaker: {speaker.Name ?? speaker.ModelType.ToString()}");
+
+            var perspective = ToPerspective(turns, speaker);
+            var systemPrompt = await speaker.SystemPromptFactory(config.ConversationHistory, history);
+            var response = await Generate(speaker.ModelType, perspective, systemPrompt);
+            Logger.LogInfo($"[Dialogue] Response: {response[..Math.Min(80, response.Length)]}...");
+            turns.Add((speaker, response));
+        }
+
+        if (turns.Count > maxTurns)
+            Logger.LogInfo("[Dialogue] Hit max turns, extracting output");
+
+        Logger.LogInfo("[Dialogue] Extracting output");
+        return await config.ExtractOutput(ToMessages(turns));
+    }
+
+    protected async Task<string> RunChain(ChainConfig config)
+    {
+        var current = config.InitialInput;
+        var step = 0;
+        foreach (var fn in config.Steps)
+        {
+            Logger.LogInfo($"[Chain] Step {++step}");
+            current = await fn(current, config.ConversationHistory);
+            Logger.LogInfo($"[Chain] Step {step} result: {current[..Math.Min(80, current.Length)]}...");
+        }
+        return current;
+    }
+
+    protected async Task<string> RunParallel(ParallelConfig config)
+    {
+        var results = await Task.WhenAll(config.Calls.Select(call => call(config.ConversationHistory)));
+        return await config.Aggregate(results);
+    }
+
+    private static List<Message> ToMessages(List<(Participant? Speaker, string Content)> turns) =>
+        turns.Select(t => new Message { Content = t.Content, IsUser = t.Speaker == null }).ToList();
+
+    private static List<Message> ToPerspective(List<(Participant? Speaker, string Content)> turns, Participant self) =>
+        turns.Select(t => new Message { Content = t.Content, IsUser = t.Speaker != self }).ToList();
+
+    protected static IReadOnlyList<Message> DialogueAsContext(IReadOnlyList<Message> history)
+    {
+        var formatted = string.Join("\n\n", history.Select((m, i) =>
+            m.IsUser ? $"Prompt: {m.Content}" : $"[Turn {i}]: {m.Content}"));
+        return [new Message { Content = formatted, IsUser = true }];
     }
 
     protected async Task<IReadOnlyList<Memory>> RetrieveMemories(string query, int topK, float threshold)
