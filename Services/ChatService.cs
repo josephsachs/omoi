@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Omoi.Models;
 using Omoi.Services.Agents;
+using Omoi.Services.Agents.Quade;
 
 namespace Omoi.Services;
 

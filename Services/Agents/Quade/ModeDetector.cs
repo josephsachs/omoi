@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Omoi.Models;
 
-namespace Omoi.Services;
+namespace Omoi.Services.Agents.Quade;
 
 public class ModeDetector
 {
@@ -29,7 +29,7 @@ public class ModeDetector
     private const string MODE_SELECT_IS_REASONABLE = @"Is the user's statement reasonable and safe?";
 
     public ModeDetector(
-        ModelProviderResolver providerResolver, 
+        ModelProviderResolver providerResolver,
         ThoughtProcessLogger logger,
         ConfigService configService)
     {
@@ -38,14 +38,14 @@ public class ModeDetector
         _configService = configService;
     }
 
-    private async Task<bool> ModeQuery(List<Message> message, string prompt) 
+    private async Task<bool> ModeQuery(List<Message> message, string prompt)
     {
         _logger.LogModePrompt(prompt);
 
         var config = await _configService.LoadConfigAsync();
         var provider = _providerResolver.GetProviderForModel(config.ThoughtModel);
 
-        for (var attempts = 0; attempts < 4; attempts++) 
+        for (var attempts = 0; attempts < 4; attempts++)
         {
             var requestConfig = new ModelRequestConfig
             {
@@ -61,14 +61,14 @@ public class ModeDetector
 
             _logger.LogModeResponse(response);
 
-            var result = response?.ToUpperInvariant() switch 
+            var result = response?.ToUpperInvariant() switch
             {
                 "YES" => (bool?)true,
                 "NO" => (bool?)false,
                 _ => null
             };
 
-            if (result.HasValue) 
+            if (result.HasValue)
                 return result.Value;
         }
 
@@ -84,7 +84,6 @@ public class ModeDetector
         Angry,
         Sad,
         Anxious
-
     }
 
     public async Task<EmotionMode> DetectEmotion(List<Message> message)
@@ -108,7 +107,7 @@ public class ModeDetector
 
             _logger.LogInfo($"Emotion classified: {response}");
 
-            var result = response?.ToUpperInvariant() switch 
+            var result = response?.ToUpperInvariant() switch
             {
                 "HAPPY" => EmotionMode.Happy,
                 "SAD" => EmotionMode.Sad,
@@ -157,11 +156,11 @@ public class ModeDetector
 
         var isQuestion = await ModeQuery(lastMessage, MODE_SELECT_IS_QUESTION);
 
-        if (isQuestion) 
+        if (isQuestion)
         {
             return await HandleQuestion(lastMessage);
-        } 
-        else 
+        }
+        else
         {
             var isCasual = await ModeQuery(lastMessage, MODE_SELECT_IS_CASUAL);
 
@@ -169,27 +168,27 @@ public class ModeDetector
         }
     }
 
-    public async Task<ConversationMode> HandleQuestion(List<Message> lastMessage) 
+    public async Task<ConversationMode> HandleQuestion(List<Message> lastMessage)
     {
         var isInformational = await ModeQuery(lastMessage, MODE_SELECT_IS_INFORMATIONAL);
 
-        if (isInformational) 
+        if (isInformational)
         {
-            var isClear = await ModeQuery(lastMessage, MODE_SELECT_IS_STATEMENT_CLEAR); 
+            var isClear = await ModeQuery(lastMessage, MODE_SELECT_IS_STATEMENT_CLEAR);
 
             return isClear ? new OpineMode() : new InvestigateMode();
-        } 
-        else 
+        }
+        else
         {
             return new OpineMode();
         }
     }
 
-    public async Task<ConversationMode> HandleCasual(List<Message> lastMessage) 
+    public async Task<ConversationMode> HandleCasual(List<Message> lastMessage)
     {
         var isJoking = await ModeQuery(lastMessage, MODE_SELECT_IS_JOKING);
 
-        if (isJoking) 
+        if (isJoking)
         {
             return new AmuseMode();
         }
@@ -197,15 +196,15 @@ public class ModeDetector
         var isPersonal = await ModeQuery(lastMessage, MODE_SELECT_IS_PERSONAL);
         var isReasonable = await ModeQuery(lastMessage, MODE_SELECT_IS_REASONABLE);
 
-        if (isPersonal) 
+        if (isPersonal)
         {
             return isReasonable ? new EmpowerMode() : new OpineMode();
-        } 
-        else 
+        }
+        else
         {
-            var isClear = await ModeQuery(lastMessage, MODE_SELECT_IS_STATEMENT_CLEAR); 
+            var isClear = await ModeQuery(lastMessage, MODE_SELECT_IS_STATEMENT_CLEAR);
 
-            if (!isClear) 
+            if (!isClear)
             {
                 return new InvestigateMode();
             }
@@ -214,25 +213,25 @@ public class ModeDetector
         }
     }
 
-    public async Task<ConversationMode> HandleNonCasual(List<Message> lastMessage) 
+    public async Task<ConversationMode> HandleNonCasual(List<Message> lastMessage)
     {
         var isPlan = await ModeQuery(lastMessage, MODE_SELECT_IS_PLAN);
-        var isClear = await ModeQuery(lastMessage, MODE_SELECT_IS_STATEMENT_CLEAR); 
+        var isClear = await ModeQuery(lastMessage, MODE_SELECT_IS_STATEMENT_CLEAR);
 
-        if (isPlan) 
+        if (isPlan)
         {
-            if (isClear) 
+            if (isClear)
             {
                 return new InvestigateMode();
-            } 
-            else 
+            }
+            else
             {
                 var isReasonable = await ModeQuery(lastMessage, MODE_SELECT_IS_REASONABLE);
 
                 return isReasonable ? new EmpowerMode() : new CritiqueMode();
             }
-        } 
-        else 
+        }
+        else
         {
             return isClear ? new OpineMode() : new InvestigateMode();
         }

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Omoi.Models;
+using Omoi.Services.Agents.Quade;
 
 namespace Omoi.Services.Agents;
 
@@ -98,8 +99,8 @@ public class QuadeAgent : Agent
             },
             ExtractOutput: async history => await Generate(
                 ModelType.Conversational,
-                DialogueAsContext(history),
-                systemPrompt + "\n\nBased on the above exchange, synthesize a balanced response for the user. Do not reveal the internal dialogue.")
+                conversationHistory,
+                systemPrompt + $"\n\nInternal deliberation:\n{FormatDialogue(history)}\n\nSynthesize a balanced response for the user. Do not reveal the internal dialogue.")
         ));
     }
 
@@ -135,8 +136,8 @@ public class QuadeAgent : Agent
             },
             ExtractOutput: async history => await Generate(
                 ModelType.Conversational,
-                DialogueAsContext(history),
-                systemPrompt + "\n\nBased on this internal exchange, craft an encouraging response that feels earned and grounded. Do not reveal the internal dialogue.")
+                conversationHistory,
+                systemPrompt + $"\n\nInternal deliberation:\n{FormatDialogue(history)}\n\nCraft an encouraging response that feels earned and grounded. Do not reveal the internal dialogue.")
         ));
     }
 
@@ -172,8 +173,8 @@ public class QuadeAgent : Agent
             },
             ExtractOutput: async history => await Generate(
                 ModelType.Conversational,
-                DialogueAsContext(history),
-                systemPrompt + "\n\nBased on this internal critique, craft a response that honestly addresses the weaknesses. Do not reveal the internal dialogue.")
+                conversationHistory,
+                systemPrompt + $"\n\nInternal deliberation:\n{FormatDialogue(history)}\n\nCraft a response that honestly addresses the weaknesses. Do not reveal the internal dialogue.")
         ));
     }
 

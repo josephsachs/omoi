@@ -1,4 +1,4 @@
-namespace Omoi.Models;
+namespace Omoi.Services.Agents.Quade;
 
 public abstract class ConversationMode
 {

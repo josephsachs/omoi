@@ -1,6 +1,7 @@
 using System;
 using System.Text.Json.Serialization;
 using ReactiveUI;
+using Omoi.Services.Agents.Quade;
 
 namespace Omoi.Models;
 

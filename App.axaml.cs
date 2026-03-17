@@ -6,6 +6,7 @@ using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
 using Omoi.Services;
 using Omoi.Services.Agents;
+using Omoi.Services.Agents.Quade;
 using Omoi.ViewModels;
 using Omoi.Views;
 

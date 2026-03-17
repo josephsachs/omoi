@@ -124,12 +124,9 @@ public abstract class Agent
     private static List<Message> ToPerspective(List<(Participant? Speaker, string Content)> turns, Participant self) =>
         turns.Select(t => new Message { Content = t.Content, IsUser = t.Speaker != self }).ToList();
 
-    protected static IReadOnlyList<Message> DialogueAsContext(IReadOnlyList<Message> history)
-    {
-        var formatted = string.Join("\n\n", history.Select((m, i) =>
-            m.IsUser ? $"Prompt: {m.Content}" : $"[Turn {i}]: {m.Content}"));
-        return [new Message { Content = formatted, IsUser = true }];
-    }
+    protected static string FormatDialogue(IReadOnlyList<Message> history) =>
+        string.Join("\n\n", history.Select((m, i) =>
+            m.IsUser ? $"Topic: {m.Content}" : $"[Turn {i}]: {m.Content}"));
 
     protected async Task<IReadOnlyList<Memory>> RetrieveMemories(string query, int topK, float threshold)
     {
