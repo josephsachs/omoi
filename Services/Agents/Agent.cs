@@ -34,21 +34,22 @@ public abstract class Agent
     public virtual Task<AgentResult?> Reflect(IReadOnlyList<Message> history) =>
         Task.FromResult<AgentResult?>(null);
 
-    protected async Task<string> Query(string prompt, IReadOnlyList<Message> context)
+    protected async Task<string> Query(string prompt, IReadOnlyList<Message> context, string? modelOverride = null)
     {
         var config = await ConfigService.LoadConfigAsync();
-        var provider = ProviderResolver.GetProviderForModel(config.ThoughtModel);
-        var requestConfig = new ModelRequestConfig { Model = config.ThoughtModel, MaxTokens = 10 };
+        var modelId = modelOverride ?? config.ThoughtModel;
+        var provider = ProviderResolver.GetProviderForModel(modelId);
+        var requestConfig = new ModelRequestConfig { Model = modelId, MaxTokens = 10 };
         Logger.LogInfo($"[Query] {prompt}");
         var result = await provider.SendMessageAsync(requestConfig, new List<Message>(context), prompt);
         Logger.LogInfo($"[Query result] {result.Trim()}");
         return result;
     }
 
-    protected async Task<string> Generate(ModelType modelType, IReadOnlyList<Message> context, string systemPrompt)
+    protected async Task<string> Generate(ModelType modelType, IReadOnlyList<Message> context, string systemPrompt, string? modelOverride = null)
     {
         var config = await ConfigService.LoadConfigAsync();
-        var modelId = modelType switch
+        var modelId = modelOverride ?? modelType switch
         {
             ModelType.Query => config.ThoughtModel,
             ModelType.Thought => config.ThoughtModel,
@@ -88,7 +89,7 @@ public abstract class Agent
             var perspective = ToPerspective(turns, speaker);
             var systemPrompt = await speaker.SystemPromptFactory(config.ConversationHistory, history);
             var response = await Generate(speaker.ModelType, perspective, systemPrompt);
-            Logger.LogInfo($"[Dialogue] Response: {response[..Math.Min(80, response.Length)]}...");
+            Logger.LogInfo($"[Dialogue] {speaker.Name ?? speaker.ModelType.ToString()}:\n{response[..Math.Min(400, response.Length)]}{(response.Length > 400 ? "..." : "")}");
             turns.Add((speaker, response));
         }
 
