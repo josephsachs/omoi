@@ -94,6 +94,9 @@ StyleCopReport.xml
 *.svclog
 *.scc
 
+# Claude Code
+.claude/
+
 # Credential files - NEVER commit these
 credential.ini
 credentials.ini

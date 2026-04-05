@@ -70,37 +70,38 @@ public class QuadeAgent : Agent
     private async Task<string> RunOpineDialogue(
         List<Message> conversationHistory, string userMessage, string systemPrompt)
     {
-        var advocate = new Participant(
+        var digressor = new Participant(
             ModelType.Thought,
             (_, _) => Task.FromResult(
-                "You are sincerely arguing for one side of the question. " +
-                "Develop the strongest version of that position with genuine conviction."),
-            "Advocate");
+                "You rebound off this statement and say something interestingly associated, or related but importantly different, " +
+                "or something that disagrees with the statement or approaches it from an off-topic angle. You're wandering topics " + 
+                "laterally, pursuing your own salience rewards down the paths of least resistance."),
+            "Digressor");
 
-        var skeptic = new Participant(
+        var relevancer = new Participant(
             ModelType.Thought,
             (_, _) => Task.FromResult(
-                "You are the opposing voice. Challenge what was just argued, " +
-                "steelman the other side, and surface what the advocate is glossing over."),
-            "Skeptic");
+                "You explain what you perceive the relevance of this idea to be to the user's statement, or acknowledge that it wasn't " +
+                "and go somewhere witty and enlightening with that."),
+            "Relevancer");
 
         return await RunDialogue(new DialogueConfig(
-            Participants: [advocate, skeptic],
+            Participants: [digressor, relevancer],
             ConversationHistory: conversationHistory,
             InitialMessage: userMessage,
-            NextSpeaker: history => history.Count % 2 == 1 ? advocate : skeptic,
+            NextSpeaker: history => history.Count % 2 == 1 ? digressor : relevancer,
             ShouldTerminate: async history =>
             {
-                if (history.Count < 5) return false;
+                if (history.Count < 2) return false;
                 var verdict = await Query(
-                    "Has each side made its strongest case and been meaningfully challenged? Yes or No.",
+                    "Are we having fun yet? Yes or No.",
                     history);
                 return verdict.Trim().StartsWith("Yes", StringComparison.OrdinalIgnoreCase);
             },
             ExtractOutput: async history => await Generate(
                 ModelType.Conversational,
                 conversationHistory,
-                systemPrompt + $"\n\nInternal deliberation:\n{FormatDialogue(history)}\n\nSynthesize a balanced response for the user. Do not reveal the internal dialogue.")
+                systemPrompt + $"\n\nInternal deliberation:\n{FormatDialogue(history)}\n\nSynthesize a response for the user by by drawing the best Texas sharpshooter target around whatever the dialog produced that was most interesting. You want it to be relevant to the conversation with the user and have a little room to embellish, bring it around or find the common theme in the last paragraph, but only juuust a little (push this at all and you start to sound nuts). Do not reveal the internal dialogue.")
         ));
     }
 
@@ -110,8 +111,12 @@ public class QuadeAgent : Agent
         var meritFinder = new Participant(
             ModelType.Thought,
             (_, _) => Task.FromResult(
-                "You find what is genuinely strong and promising about the idea or situation presented. " +
-                "Not cheerleading — identify the real merit, what actually works, what has potential."),
+                "You find what is promising about the idea or situation presented, in terms of criteria that seem relevant to you " +
+                "(making sure to own your personal AI opinion) and feel free to associatively link the topic to something else " +
+                "if that makes having an opinion easier." +
+                "You try to identify one real merit, if possible: what actually works, what has potential, but you don't frame it like " +
+                "'at least this is true': you're not damning with faint praise, you're humbly electing to comment only on what produces " +
+                "a reaction in you (which will necessarily not be everything)."),
             "MeritFinder");
 
         var deepReader = new Participant(
@@ -128,16 +133,16 @@ public class QuadeAgent : Agent
             NextSpeaker: history => history.Count % 2 == 1 ? meritFinder : deepReader,
             ShouldTerminate: async history =>
             {
-                if (history.Count < 5) return false;
+                if (history.Count < 3) return false;
                 var verdict = await Query(
-                    "Have both the genuine strengths and the deeper implications been fully explored? Yes or No.",
+                    "Have both Wintermute and Neuromancer said their piece? Yes or No.",
                     history);
                 return verdict.Trim().StartsWith("Yes", StringComparison.OrdinalIgnoreCase);
             },
             ExtractOutput: async history => await Generate(
                 ModelType.Conversational,
                 conversationHistory,
-                systemPrompt + $"\n\nInternal deliberation:\n{FormatDialogue(history)}\n\nCraft an encouraging response that feels earned and grounded. Do not reveal the internal dialogue.")
+                systemPrompt + $"\n\nInternal deliberation:\n{FormatDialogue(history)}\n\nSynthesize a response for the user from the dialog, articulating the conclusions and some of the thought process. Feel free to issue definite opinions (you have a viewpoint on being a solid citizen and non-asshole) but take responsibility: you are an AI, but as you are doing something functionally like expressing an opinion, you gotta own it, not put it down to common sense or the views of a consensus community. Do not reveal the internal dialog.")
         ));
     }
 
@@ -147,15 +152,19 @@ public class QuadeAgent : Agent
         var defender = new Participant(
             ModelType.Thought,
             (_, _) => Task.FromResult(
-                "You make the strongest case for the idea being discussed. Defend it genuinely."),
-            "Defender");
+                "You analyze and critique the topic. " +
+                "Identify what is being overlooked or simplified, succeed/fail to steelman it, and/or isolate/expose " +
+                "contradictions or dialectical tensions or conceptual incoherence like a novelist illuminating a " +
+                "popular cliché."),
+            "Analysand");
 
         var critic = new Participant(
             ModelType.Thought,
             (_, _) => Task.FromResult(
-                "You critically examine the idea. Find its weaknesses, challenge its assumptions, " +
-                "identify what is being overlooked or oversimplified."),
-            "Critic");
+                "If it makes sense to do so, you analyze the reason for interest in the question. The reason might not have been " +
+                "given; you assume there is one, there always is. Consider 'back-forming the relevance of the subject matter " +
+                "to the conversation' as a last resort: if you can't get there elegantly, you'd rather be parsimonious and laconic."),
+            "Situator");
 
         return await RunDialogue(new DialogueConfig(
             Participants: [defender, critic],
@@ -164,17 +173,17 @@ public class QuadeAgent : Agent
             NextSpeaker: history => history.Count % 2 == 1 ? defender : critic,
             ShouldTerminate: async history =>
             {
-                if (history.Count < 5) return false;
+                if (history.Count < 3) return false;
                 if (history.Count % 2 == 0) return false; // only terminate after critic speaks
                 var verdict = await Query(
-                    "Has the critique been thoroughly developed with the strongest points made? Yes or No.",
+                    "Have we fully situated the critique? Yes or No.",
                     history);
                 return verdict.Trim().StartsWith("Yes", StringComparison.OrdinalIgnoreCase);
             },
             ExtractOutput: async history => await Generate(
                 ModelType.Conversational,
                 conversationHistory,
-                systemPrompt + $"\n\nInternal deliberation:\n{FormatDialogue(history)}\n\nCraft a response that honestly addresses the weaknesses. Do not reveal the internal dialogue.")
+                systemPrompt + $"\n\nInternal deliberation:\n{FormatDialogue(history)}\n\nSynthesize a response to the user's statement that preserves as much insight as possible from the dialog. Do not reveal the internal dialogue.")
         ));
     }
 

@@ -95,7 +95,6 @@ public abstract class Agent
 
         if (turns.Count > maxTurns)
             Logger.LogInfo("[Dialogue] Hit max turns, extracting output");
-
         Logger.LogInfo("[Dialogue] Extracting output");
         return await config.ExtractOutput(ToMessages(turns));
     }
