@@ -34,7 +34,6 @@ Modes:
 - Opine (vibes: expansive, associative)
 - Empower (vibes: appreciative, collaborative)
 - Critique (vibes: exploratory, analytical)
-- Investigate (vibes: clarifying)
 - Amuse (vibes: unserious, fun)
 
 Observations:
@@ -196,7 +195,8 @@ Reply with a single word: the mode name.";
 
             if (emotion is EmotionMode.Sad or EmotionMode.Angry or EmotionMode.Anxious)
             {
-                await GatherNonCasual(lastMessage, observations);
+                var early = await GatherNonCasual(lastMessage, observations);
+                if (early != null) return early;
                 return await Classify(lastMessage, observations);
             }
         }
@@ -210,7 +210,8 @@ Reply with a single word: the mode name.";
         if (isQuestion)
         {
             observations.Add("Form: question");
-            await GatherQuestion(lastMessage, observations);
+            var early = await GatherQuestion(lastMessage, observations);
+            if (early != null) return early;
         }
         else
         {
@@ -220,19 +221,21 @@ Reply with a single word: the mode name.";
             if (isCasual)
             {
                 observations.Add("Register: casual");
-                await GatherCasual(lastMessage, observations);
+                var early = await GatherCasual(lastMessage, observations);
+                if (early != null) return early;
             }
             else
             {
                 observations.Add("Register: non-casual");
-                await GatherNonCasual(lastMessage, observations);
+                var early = await GatherNonCasual(lastMessage, observations);
+                if (early != null) return early;
             }
         }
 
         return await Classify(lastMessage, observations);
     }
 
-    private async Task GatherQuestion(List<Message> lastMessage, List<string> observations)
+    private async Task<ConversationMode?> GatherQuestion(List<Message> lastMessage, List<string> observations)
     {
         var isInformational = await ModeQuery(lastMessage, MODE_SELECT_IS_INFORMATIONAL);
 
@@ -240,22 +243,24 @@ Reply with a single word: the mode name.";
         {
             observations.Add("Nature: informational/instrumental");
             var isClear = await ModeQuery(lastMessage, MODE_SELECT_IS_STATEMENT_CLEAR);
-            observations.Add(isClear ? "Clarity: clear" : "Clarity: unclear, needs clarification");
+            if (!isClear) return new InvestigateMode();
         }
         else
         {
             observations.Add("Nature: not purely informational");
         }
+
+        return null;
     }
 
-    private async Task GatherCasual(List<Message> lastMessage, List<string> observations)
+    private async Task<ConversationMode?> GatherCasual(List<Message> lastMessage, List<string> observations)
     {
         var isJoking = await ModeQuery(lastMessage, MODE_SELECT_IS_JOKING);
 
         if (isJoking)
         {
             observations.Add("Tone: joking/playful");
-            return;
+            return null;
         }
 
         var isPersonal = await ModeQuery(lastMessage, MODE_SELECT_IS_PERSONAL);
@@ -267,22 +272,23 @@ Reply with a single word: the mode name.";
         if (!isPersonal)
         {
             var isClear = await ModeQuery(lastMessage, MODE_SELECT_IS_STATEMENT_CLEAR);
-            observations.Add(isClear ? "Clarity: clear" : "Clarity: unclear, needs clarification");
+            if (!isClear) return new InvestigateMode();
         }
+
+        return null;
     }
 
-    private async Task GatherNonCasual(List<Message> lastMessage, List<string> observations)
+    private async Task<ConversationMode?> GatherNonCasual(List<Message> lastMessage, List<string> observations)
     {
-        var isPlan = await ModeQuery(lastMessage, MODE_SELECT_IS_PLAN);
         var isClear = await ModeQuery(lastMessage, MODE_SELECT_IS_STATEMENT_CLEAR);
+        if (!isClear) return new InvestigateMode();
 
+        var isPlan = await ModeQuery(lastMessage, MODE_SELECT_IS_PLAN);
         observations.Add(isPlan ? "Content: describes or implies a plan" : "Content: not a plan");
-        observations.Add(isClear ? "Clarity: clear" : "Clarity: unclear, needs clarification");
 
-        if (isPlan && !isClear)
-        {
-            var isReasonable = await ModeQuery(lastMessage, MODE_SELECT_IS_REASONABLE);
-            observations.Add(isReasonable ? "Reasonableness: reasonable" : "Reasonableness: dubious");
-        }
+        var isReasonable = await ModeQuery(lastMessage, MODE_SELECT_IS_REASONABLE);
+        observations.Add(isReasonable ? "Reasonableness: reasonable" : "Reasonableness: dubious");
+
+        return null;
     }
 }
