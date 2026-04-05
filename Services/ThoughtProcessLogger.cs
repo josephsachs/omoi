@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using Omoi.Models;
+using Omoi.Services.Agents.Quade;
 
 namespace Omoi.Services;
 

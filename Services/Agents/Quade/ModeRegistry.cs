@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace Omoi.Models;
+namespace Omoi.Services.Agents.Quade;
 
 public static class ModeRegistry
 {

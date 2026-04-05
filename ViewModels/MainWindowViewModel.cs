@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using ReactiveUI;
 using Omoi.Models;
 using Omoi.Services;
+using Omoi.Services.Agents.Quade;
 using System.Numerics;
 
 namespace Omoi.ViewModels;

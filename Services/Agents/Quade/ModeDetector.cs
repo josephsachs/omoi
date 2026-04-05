@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Omoi.Models;
 
-namespace Omoi.Services;
+namespace Omoi.Services.Agents.Quade;
 
 public class ModeDetector
 {
@@ -24,12 +24,25 @@ public class ModeDetector
 
     private const string MODE_SELECT_IS_JOKING = @"Is the user's message witty, ironical, joking, distanced or being silly? Disregarding dark sarcasm, obvious bleakness and aggrieved self-deprecation.";
 
-    private const string MODE_SELECT_IS_PLAN = @"Does the user's statement a plan or course of action? Does it imply a plan or course of action?";
+    private const string MODE_SELECT_IS_PLAN = @"Does the user's statement describe a plan or course of action? Does it imply a plan or course of action?";
 
     private const string MODE_SELECT_IS_REASONABLE = @"Is the user's statement reasonable and safe?";
 
+    private const string CLASSIFY_MODE = @"Given the following observations about the user's message, choose the single most appropriate mode of response.
+
+Modes:
+- Opine (vibes: expansive, associative)
+- Empower (vibes: appreciative, collaborative)
+- Critique (vibes: exploratory, analytical)
+- Amuse (vibes: unserious, fun)
+
+Observations:
+{0}
+
+Reply with a single word: the mode name.";
+
     public ModeDetector(
-        ModelProviderResolver providerResolver, 
+        ModelProviderResolver providerResolver,
         ThoughtProcessLogger logger,
         ConfigService configService)
     {
@@ -38,14 +51,14 @@ public class ModeDetector
         _configService = configService;
     }
 
-    private async Task<bool> ModeQuery(List<Message> message, string prompt) 
+    private async Task<bool> ModeQuery(List<Message> message, string prompt)
     {
         _logger.LogModePrompt(prompt);
 
         var config = await _configService.LoadConfigAsync();
         var provider = _providerResolver.GetProviderForModel(config.ThoughtModel);
 
-        for (var attempts = 0; attempts < 4; attempts++) 
+        for (var attempts = 0; attempts < 4; attempts++)
         {
             var requestConfig = new ModelRequestConfig
             {
@@ -61,20 +74,59 @@ public class ModeDetector
 
             _logger.LogModeResponse(response);
 
-            var result = response?.ToUpperInvariant() switch 
+            var result = response?.ToUpperInvariant() switch
             {
                 "YES" => (bool?)true,
                 "NO" => (bool?)false,
                 _ => null
             };
 
-            if (result.HasValue) 
+            if (result.HasValue)
                 return result.Value;
         }
 
         _logger.LogModeResponse("Tried three times without valid response");
 
         return false;
+    }
+
+    private async Task<ConversationMode> Classify(List<Message> lastMessage, List<string> observations)
+    {
+        var observationBlock = string.Join("\n", observations);
+        var prompt = string.Format(CLASSIFY_MODE, observationBlock);
+
+        _logger.LogModePrompt(prompt);
+
+        var config = await _configService.LoadConfigAsync();
+        var provider = _providerResolver.GetProviderForModel(config.ThoughtModel);
+
+        for (var attempts = 0; attempts < 4; attempts++)
+        {
+            var requestConfig = new ModelRequestConfig
+            {
+                Model = config.ThoughtModel,
+                MaxTokens = 16
+            };
+
+            var response = await provider.SendMessageAsync(
+                requestConfig,
+                lastMessage,
+                prompt
+            );
+
+            _logger.LogModeResponse(response);
+
+            var trimmed = response?.Trim();
+            if (!string.IsNullOrEmpty(trimmed))
+            {
+                var mode = ModeRegistry.GetMode(trimmed);
+                if (mode.GetIdentifier() == trimmed)
+                    return mode;
+            }
+        }
+
+        _logger.LogModeResponse("Classifier failed to return valid mode");
+        return ModeRegistry.GetDefaultMode();
     }
 
     public enum EmotionMode
@@ -84,7 +136,6 @@ public class ModeDetector
         Angry,
         Sad,
         Anxious
-
     }
 
     public async Task<EmotionMode> DetectEmotion(List<Message> message)
@@ -108,7 +159,7 @@ public class ModeDetector
 
             _logger.LogInfo($"Emotion classified: {response}");
 
-            var result = response?.ToUpperInvariant() switch 
+            var result = response?.ToUpperInvariant() switch
             {
                 "HAPPY" => EmotionMode.Happy,
                 "SAD" => EmotionMode.Sad,
@@ -133,108 +184,111 @@ public class ModeDetector
         }
 
         var lastMessage = recentMessages.TakeLast(1).ToList();
+        var observations = new List<string>();
 
         var isEmotional = await ModeQuery(lastMessage, MODE_SELECT_IS_EMOTIONAL);
 
         if (isEmotional)
         {
             var emotion = await DetectEmotion(lastMessage);
+            observations.Add($"Emotion: {emotion}");
 
-            switch (emotion)
+            if (emotion is EmotionMode.Sad or EmotionMode.Angry or EmotionMode.Anxious)
             {
-                case EmotionMode.Happy:
-                    break;
-                case EmotionMode.Sad:
-                    return await HandleNonCasual(lastMessage);
-                case EmotionMode.Angry:
-                    return await HandleNonCasual(lastMessage);
-                case EmotionMode.Anxious:
-                    return await HandleNonCasual(lastMessage);
-                case EmotionMode.Neutral:
-                    break;
+                var early = await GatherNonCasual(lastMessage, observations);
+                if (early != null) return early;
+                return await Classify(lastMessage, observations);
             }
+        }
+        else
+        {
+            observations.Add("Emotion: not significantly emotional");
         }
 
         var isQuestion = await ModeQuery(lastMessage, MODE_SELECT_IS_QUESTION);
 
-        if (isQuestion) 
+        if (isQuestion)
         {
-            return await HandleQuestion(lastMessage);
-        } 
-        else 
+            observations.Add("Form: question");
+            var early = await GatherQuestion(lastMessage, observations);
+            if (early != null) return early;
+        }
+        else
         {
+            observations.Add("Form: statement");
             var isCasual = await ModeQuery(lastMessage, MODE_SELECT_IS_CASUAL);
 
-            return isCasual ? await HandleCasual(lastMessage) : await HandleNonCasual(lastMessage);
+            if (isCasual)
+            {
+                observations.Add("Register: casual");
+                var early = await GatherCasual(lastMessage, observations);
+                if (early != null) return early;
+            }
+            else
+            {
+                observations.Add("Register: non-casual");
+                var early = await GatherNonCasual(lastMessage, observations);
+                if (early != null) return early;
+            }
         }
+
+        return await Classify(lastMessage, observations);
     }
 
-    public async Task<ConversationMode> HandleQuestion(List<Message> lastMessage) 
+    private async Task<ConversationMode?> GatherQuestion(List<Message> lastMessage, List<string> observations)
     {
         var isInformational = await ModeQuery(lastMessage, MODE_SELECT_IS_INFORMATIONAL);
 
-        if (isInformational) 
+        if (isInformational)
         {
-            var isClear = await ModeQuery(lastMessage, MODE_SELECT_IS_STATEMENT_CLEAR); 
-
-            return isClear ? new OpineMode() : new InvestigateMode();
-        } 
-        else 
-        {
-            return new OpineMode();
+            observations.Add("Nature: informational/instrumental");
+            var isClear = await ModeQuery(lastMessage, MODE_SELECT_IS_STATEMENT_CLEAR);
+            if (!isClear) return new InvestigateMode();
         }
+        else
+        {
+            observations.Add("Nature: not purely informational");
+        }
+
+        return null;
     }
 
-    public async Task<ConversationMode> HandleCasual(List<Message> lastMessage) 
+    private async Task<ConversationMode?> GatherCasual(List<Message> lastMessage, List<string> observations)
     {
         var isJoking = await ModeQuery(lastMessage, MODE_SELECT_IS_JOKING);
 
-        if (isJoking) 
+        if (isJoking)
         {
-            return new AmuseMode();
+            observations.Add("Tone: joking/playful");
+            return null;
         }
 
         var isPersonal = await ModeQuery(lastMessage, MODE_SELECT_IS_PERSONAL);
         var isReasonable = await ModeQuery(lastMessage, MODE_SELECT_IS_REASONABLE);
 
-        if (isPersonal) 
-        {
-            return isReasonable ? new EmpowerMode() : new OpineMode();
-        } 
-        else 
-        {
-            var isClear = await ModeQuery(lastMessage, MODE_SELECT_IS_STATEMENT_CLEAR); 
+        observations.Add(isPersonal ? "Subject: personal" : "Subject: impersonal");
+        observations.Add(isReasonable ? "Reasonableness: reasonable" : "Reasonableness: dubious");
 
-            if (!isClear) 
-            {
-                return new InvestigateMode();
-            }
-
-            return isReasonable ? new OpineMode() : new CritiqueMode();
+        if (!isPersonal)
+        {
+            var isClear = await ModeQuery(lastMessage, MODE_SELECT_IS_STATEMENT_CLEAR);
+            if (!isClear) return new InvestigateMode();
         }
+
+        return null;
     }
 
-    public async Task<ConversationMode> HandleNonCasual(List<Message> lastMessage) 
+    private async Task<ConversationMode?> GatherNonCasual(List<Message> lastMessage, List<string> observations)
     {
+        var isClear = await ModeQuery(lastMessage, MODE_SELECT_IS_STATEMENT_CLEAR);
+        if (!isClear) return new InvestigateMode();
+
         var isPlan = await ModeQuery(lastMessage, MODE_SELECT_IS_PLAN);
-        var isClear = await ModeQuery(lastMessage, MODE_SELECT_IS_STATEMENT_CLEAR); 
+        observations.Add(isPlan ? "Content: describes or implies a plan" : "Content: not a plan");
 
-        if (isPlan) 
-        {
-            if (isClear) 
-            {
-                return new InvestigateMode();
-            } 
-            else 
-            {
-                var isReasonable = await ModeQuery(lastMessage, MODE_SELECT_IS_REASONABLE);
+        var isReasonable = await ModeQuery(lastMessage, MODE_SELECT_IS_REASONABLE);
+        observations.Add(isReasonable ? "Reasonableness: reasonable" : "Reasonableness: dubious");
 
-                return isReasonable ? new EmpowerMode() : new CritiqueMode();
-            }
-        } 
-        else 
-        {
-            return isClear ? new OpineMode() : new InvestigateMode();
-        }
+        return null;
     }
 }

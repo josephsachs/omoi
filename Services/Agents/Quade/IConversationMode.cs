@@ -1,4 +1,4 @@
-namespace Omoi.Models;
+namespace Omoi.Services.Agents.Quade;
 
 public interface IConversationMode
 {
@@ -7,6 +7,4 @@ public interface IConversationMode
 
     public int GetContextMessageDepth();
     public int GetMemoryTopK();
-    
-    //public int getMemoryIterations();
 }
