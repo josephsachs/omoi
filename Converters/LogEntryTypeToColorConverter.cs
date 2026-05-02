@@ -1,5 +1,6 @@
 using System;
 using System.Globalization;
+using Avalonia;
 using Avalonia.Data.Converters;
 using Avalonia.Media;
 using Omoi.Models;
@@ -12,7 +13,7 @@ public class LogEntryTypeToColorConverter : IValueConverter
     {
         if (value is LogEntryType.Error)
             return new SolidColorBrush(Color.Parse("#FF6B6B"));
-        return null;
+        return AvaloniaProperty.UnsetValue;
     }
 
     public object? ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
