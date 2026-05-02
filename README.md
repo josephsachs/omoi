@@ -16,3 +16,17 @@ The conversation context is 8 exchanges plus any retrieved memories.
 Future feature work will include a Google Drive integration to sync conversations across devices, mobile support, and markdown (pending a stable version of `Markdown.Avalonia` version 11.0.3).
 
 The behavior of modes and memory are in active development so check back for updates!
+
+## Version history
+1.0 - Interface, basic chat
+ 
+1.1 - OpenAI models, improved mode prompts
+
+1.2 - RAG, DeepSeek models
+
+1.3 - Agent patterns for modes, refactor
+
+1.4 - Experimentation with classifier prompts
+
+1.5 - Replace provider clients with OpenRouter client
+
