@@ -1,5 +1,5 @@
 # Omoi #
-v1.2
+v1.5
 
 **Omoi** is an experimental chatbot intended for casual, speculative and intellectual conversation. It uses *modes* to promote flexibility and provide a responsive style of speech and analysis. Mode determines the system prompt for the current generation. The aim of Omoi is to serve as an alternative to the increasingly task- and information-focused styles of the official chatbots.
 
