@@ -110,7 +110,7 @@ public class OpenRouterClient : IModelProvider, IVectorProvider
         var request = new
         {
             model = config.Model,
-            max_tokens = config.MaxTokens,
+            max_tokens = Math.Max(16, config.MaxTokens),
             messages = apiMessages.ToArray()
         };
 
