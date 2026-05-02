@@ -45,11 +45,37 @@ public class OpenRouterClient : IModelProvider, IVectorProvider
                 DisplayName = m.Name,
                 Type = "model",
                 CreatedAt = DateTimeOffset.FromUnixTimeSeconds(m.Created).UtcDateTime,
-                Categories = IsEmbeddingModel(m.Id)
-                    ? new List<string> { "vector" }
-                    : new List<string> { "chat", "thought", "memory" }
+                Categories = GetCategories(m)
             })
+            .Where(m => m.Categories.Count > 0)
             .ToList() ?? new List<ModelInfo>();
+    }
+
+    private static List<string> GetCategories(OpenRouterModel model)
+    {
+        var outputs = model.Architecture?.OutputModalities ?? new List<string>();
+
+        if (outputs.Contains("embeddings"))
+            return new List<string> { "vector" };
+
+        if (!outputs.Contains("text"))
+            return new List<string>();
+
+        return IsThoughtModel(model.Id)
+            ? new List<string> { "thought" }
+            : new List<string> { "chat", "memory" };
+    }
+
+    private static readonly HashSet<string> _thoughtTokens = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "nano", "mini", "flash", "haiku", "small", "tiny", "micro", "lite", "fast"
+    };
+
+    private static bool IsThoughtModel(string modelId)
+    {
+        var modelPart = modelId.Contains('/') ? modelId[(modelId.IndexOf('/') + 1)..] : modelId;
+        var tokens = modelPart.Split(['-', '.', ':'], StringSplitOptions.RemoveEmptyEntries);
+        return tokens.Any(t => _thoughtTokens.Contains(t));
     }
 
     public async Task<string> SendMessageAsync(
@@ -145,6 +171,15 @@ public class OpenRouterClient : IModelProvider, IVectorProvider
 
         [JsonPropertyName("created")]
         public long Created { get; set; }
+
+        [JsonPropertyName("architecture")]
+        public OpenRouterArchitecture? Architecture { get; set; }
+    }
+
+    private class OpenRouterArchitecture
+    {
+        [JsonPropertyName("output_modalities")]
+        public List<string> OutputModalities { get; set; } = new();
     }
 
     private class ChatCompletionResponse
