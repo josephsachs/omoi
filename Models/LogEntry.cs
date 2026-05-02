@@ -8,7 +8,8 @@ public enum LogEntryType
     ModePrompt,
     ModeResponse,
     SystemPrompt,
-    Info
+    Info,
+    Error
 }
 
 public class LogEntry

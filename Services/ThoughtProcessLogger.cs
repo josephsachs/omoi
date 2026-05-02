@@ -53,6 +53,15 @@ public class ThoughtProcessLogger
         });
     }
 
+    public void LogError(string message)
+    {
+        Entries.Add(new LogEntry
+        {
+            Type = LogEntryType.Error,
+            Content = message
+        });
+    }
+
     public void Clear()
     {
         Entries.Clear();

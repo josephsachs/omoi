@@ -2,10 +2,15 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="using:Omoi.ViewModels"
         xmlns:models="using:Omoi.Models"
+        xmlns:converters="using:Omoi.Converters"
         x:Class="Omoi.Views.ThoughtProcessWindow"
         x:DataType="vm:ThoughtProcessViewModel"
         Title="Thought Process"
         Width="700" Height="500">
+
+    <Window.Resources>
+        <converters:LogEntryTypeToColorConverter x:Key="LogTypeToColor"/>
+    </Window.Resources>
 
     <ScrollViewer x:Name="LogScrollViewer"
                   VerticalScrollBarVisibility="Auto"
@@ -22,7 +27,8 @@
                             <TextBlock Text="{Binding Content}"
                                        TextWrapping="Wrap"
                                        FontFamily="Consolas,Courier New,monospace"
-                                       FontSize="12"/>
+                                       FontSize="12"
+                                       Foreground="{Binding Type, Converter={StaticResource LogTypeToColor}}"/>
                         </StackPanel>
                     </Border>
                 </DataTemplate>

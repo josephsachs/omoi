@@ -25,10 +25,10 @@ public partial class App : Application
         {
             var configService = new ConfigService();
             var credentialsService = new CredentialsService();
-            var openRouterClient = new OpenRouterClient();
+            var logger = new ThoughtProcessLogger();
+            var openRouterClient = new OpenRouterClient(logger);
             var supabaseClient = new SupabaseClient();
             var qdrantClient = new QdrantClient();
-            var logger = new ThoughtProcessLogger();
             var conversationService = new ConversationService();
 
             var providerResolver = new ModelProviderResolver(openRouterClient);

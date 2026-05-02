@@ -13,11 +13,13 @@ namespace Omoi.Services;
 public class OpenRouterClient : IModelProvider, IVectorProvider
 {
     private readonly HttpClient _httpClient;
+    private readonly ThoughtProcessLogger _logger;
     private const string BASE_URL = "https://openrouter.ai/api/v1";
     private const string EMBEDDING_MODEL = "openai/text-embedding-3-large";
 
-    public OpenRouterClient()
+    public OpenRouterClient(ThoughtProcessLogger logger)
     {
+        _logger = logger;
         _httpClient = new HttpClient();
         _httpClient.BaseAddress = new Uri(BASE_URL);
         _httpClient.DefaultRequestHeaders.Add("HTTP-Referer", "https://omoi.app");
@@ -120,6 +122,7 @@ public class OpenRouterClient : IModelProvider, IVectorProvider
         if (!response.IsSuccessStatusCode)
         {
             var errorContent = await response.Content.ReadAsStringAsync();
+            _logger.LogError($"[API Error] Model: {config.Model}\n{errorContent}");
             var errorJson = JsonSerializer.Deserialize<JsonDocument>(errorContent);
             var errorMessage = errorJson?.RootElement.GetProperty("error").GetProperty("message").GetString()
                 ?? "Unknown API error";
@@ -149,6 +152,7 @@ public class OpenRouterClient : IModelProvider, IVectorProvider
         if (!response.IsSuccessStatusCode)
         {
             var errorContent = await response.Content.ReadAsStringAsync();
+            _logger.LogError($"[API Error] Model: {EMBEDDING_MODEL}\n{errorContent}");
             var errorJson = JsonSerializer.Deserialize<JsonDocument>(errorContent);
             var errorMessage = errorJson?.RootElement.GetProperty("error").GetProperty("message").GetString()
                 ?? "Unknown API error";
