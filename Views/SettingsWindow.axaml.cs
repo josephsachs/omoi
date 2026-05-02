@@ -17,58 +17,26 @@ public partial class SettingsWindow : Window
     protected override async void OnOpened(System.EventArgs e)
     {
         base.OnOpened(e);
-        
+
         if (DataContext is SettingsWindowViewModel viewModel)
         {
             await viewModel.LoadKeysAsync();
         }
     }
 
-    private async void AddAnthropicKey_Click(object? sender, RoutedEventArgs e)
+    private async void AddOpenRouterKey_Click(object? sender, RoutedEventArgs e)
     {
         if (DataContext is SettingsWindowViewModel viewModel)
         {
-            await viewModel.AddOrReplaceKeyAsync(CredentialsService.ANTHROPIC);
+            await viewModel.AddOrReplaceKeyAsync(CredentialsService.OPENROUTER);
         }
     }
 
-    private async void DeleteAnthropicKey_Click(object? sender, RoutedEventArgs e)
+    private async void DeleteOpenRouterKey_Click(object? sender, RoutedEventArgs e)
     {
         if (DataContext is SettingsWindowViewModel viewModel)
         {
-            await viewModel.DeleteKeyAsync(CredentialsService.ANTHROPIC);
-        }
-    }
-
-    private async void AddOpenaiKey_Click(object? sender, RoutedEventArgs e)
-    {
-        if (DataContext is SettingsWindowViewModel viewModel)
-        {
-            await viewModel.AddOrReplaceKeyAsync(CredentialsService.OPENAI);
-        }
-    }
-
-    private async void DeleteOpenaiKey_Click(object? sender, RoutedEventArgs e)
-    {
-        if (DataContext is SettingsWindowViewModel viewModel)
-        {
-            await viewModel.DeleteKeyAsync(CredentialsService.OPENAI);
-        }
-    }
-
-    private async void AddDeepseekKey_Click(object? sender, RoutedEventArgs e)
-    {
-        if (DataContext is SettingsWindowViewModel viewModel)
-        {
-            await viewModel.AddOrReplaceKeyAsync(CredentialsService.DEEPSEEK);
-        }
-    }
-
-    private async void DeleteDeepseekKey_Click(object? sender, RoutedEventArgs e)
-    {
-        if (DataContext is SettingsWindowViewModel viewModel)
-        {
-            await viewModel.DeleteKeyAsync(CredentialsService.DEEPSEEK);
+            await viewModel.DeleteKeyAsync(CredentialsService.OPENROUTER);
         }
     }
 

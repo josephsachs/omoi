@@ -1,24 +1,13 @@
-using System;
-using Omoi.Models;
-
 namespace Omoi.Services;
 
 public class VectorProviderResolver
 {
-    private readonly IVectorProvider _openAiProvider;
+    private readonly IVectorProvider _provider;
 
-    public VectorProviderResolver(IVectorProvider openAiProvider)
+    public VectorProviderResolver(IVectorProvider provider)
     {
-        _openAiProvider = openAiProvider;
+        _provider = provider;
     }
 
-    public IVectorProvider GetProviderForModel(string modelId)
-    {
-        if (OpenAiModelRegistry.IsSupported(modelId))
-        {
-            return _openAiProvider;
-        }
-
-        throw new InvalidOperationException($"No vector provider registered for model: {modelId}");
-    }
+    public IVectorProvider GetProviderForModel(string modelId) => _provider;
 }

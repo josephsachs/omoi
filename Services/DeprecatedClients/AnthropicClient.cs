@@ -7,8 +7,9 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 using Omoi.Models;
+using Omoi.Services;
 
-namespace Omoi.Services;
+namespace Omoi.Services.DeprecatedClients;
 
 public class AnthropicClient : IModelProvider
 {
@@ -32,13 +33,13 @@ public class AnthropicClient : IModelProvider
     public async Task<List<ModelInfo>> GetAvailableModelsAsync()
     {
         var response = await _httpClient.GetAsync("https://api.anthropic.com/v1/models");
-        
+
         var content = await response.Content.ReadAsStringAsync();
-        
+
         response.EnsureSuccessStatusCode();
-        
+
         var result = JsonSerializer.Deserialize<ModelsResponse>(content);
-        
+
         return result?.Data
             .Where(m => m.Type == "model")
             .OrderByDescending(m => m.CreatedAt)
@@ -66,16 +67,16 @@ public class AnthropicClient : IModelProvider
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         var response = await _httpClient.PostAsync("https://api.anthropic.com/v1/messages", content);
-        
+
         if (!response.IsSuccessStatusCode)
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             var errorJson = JsonSerializer.Deserialize<JsonDocument>(errorContent);
-            var errorMessage = errorJson?.RootElement.GetProperty("error").GetProperty("message").GetString() 
+            var errorMessage = errorJson?.RootElement.GetProperty("error").GetProperty("message").GetString()
                 ?? "Unknown API error";
             throw new HttpRequestException(errorMessage);
         }
-        
+
         var responseJson = await response.Content.ReadAsStringAsync();
         var result = JsonSerializer.Deserialize<MessageResponse>(responseJson);
 
@@ -98,7 +99,7 @@ public class AnthropicClient : IModelProvider
     {
         [JsonPropertyName("type")]
         public string Type { get; set; } = string.Empty;
-        
+
         [JsonPropertyName("text")]
         public string Text { get; set; } = string.Empty;
     }

@@ -180,11 +180,11 @@ public partial class MainWindow : Window
         }
         modelMenu.Items.Add(memoryMenuItem);
 
-        var hasOpenAiKey = await viewModel.CredentialsService.HasApiKeyAsync(CredentialsService.OPENAI);
-        var vectorMenuItem = new MenuItem 
-        { 
+        var hasOpenRouterKey = await viewModel.CredentialsService.HasApiKeyAsync(CredentialsService.OPENROUTER);
+        var vectorMenuItem = new MenuItem
+        {
             Header = "_Vector Models",
-            IsEnabled = hasOpenAiKey
+            IsEnabled = hasOpenRouterKey
         };
         
         foreach (var model in vectorModels)
@@ -535,8 +535,8 @@ public partial class MainWindow : Window
             var settingsWindow = new SettingsWindow
             {
                 DataContext = new SettingsWindowViewModel(
-                    viewModel.CredentialsService, 
-                    viewModel.GetAnthropicClient(),
+                    viewModel.CredentialsService,
+                    viewModel.GetOpenRouterClient(),
                     viewModel.ConfigService)
             };
             

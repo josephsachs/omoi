@@ -9,9 +9,7 @@ namespace Omoi.Services;
 
 public class CredentialsService
 {
-    public const string ANTHROPIC = "anthropic";
-    public const string OPENAI = "openai";
-    public const string DEEPSEEK = "deepseek";
+    public const string OPENROUTER = "openrouter";
     public const string ANLATAN = "anlatan";
     public const string SUPABASE = "supabase";
     public const string QDRANT = "qdrant";

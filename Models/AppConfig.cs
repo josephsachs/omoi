@@ -8,9 +8,9 @@ public enum VectorStorageProvider
 
 public class AppConfig
 {
-    public string ConversationalModel { get; set; } = "claude-3-7-sonnet-20250219";
-    public string ThoughtModel { get; set; } = "gpt-4.1-nano";
-    public string MemoryModel { get; set; } = "claude-sonnet-4-5-20250929";
+    public string ConversationalModel { get; set; } = "anthropic/claude-3-7-sonnet";
+    public string ThoughtModel { get; set; } = "openai/gpt-4.1-nano";
+    public string MemoryModel { get; set; } = "anthropic/claude-sonnet-4-5";
     public string VectorModel { get; set; } = string.Empty;
     public string SavedConversationsPath { get; set; } = "~/.Omoi/conversations/";
     public VectorStorageProvider SelectedVectorStorage { get; set; } = VectorStorageProvider.Qdrant;
