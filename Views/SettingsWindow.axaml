@@ -19,85 +19,29 @@
                                FontSize="16"
                                Margin="0,0,0,10"/>
                     
-                    <!-- Anthropic -->
+                    <!-- OpenRouter -->
                     <Border BorderBrush="Gray" BorderThickness="1" Padding="15" CornerRadius="5">
                         <StackPanel Spacing="10">
-                            <TextBlock Text="Anthropic" FontWeight="Bold" FontSize="14"/>
-                            
-                            <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding HasAnthropicKey}">
-                                <TextBlock Grid.Column="0" Text="Current Key:" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                <TextBlock Grid.Column="1" 
-                                          Text="{Binding AnthropicKeyDisplay}" 
-                                          VerticalAlignment="Center"
-                                          FontFamily="Consolas,Courier New,monospace"/>
-                                <Button Grid.Column="2" 
-                                       Content="Delete" 
-                                       Click="DeleteAnthropicKey_Click"
-                                       Margin="10,0,0,0"/>
-                            </Grid>
-                            
-                            <StackPanel Spacing="10" IsVisible="{Binding !HasAnthropicKey}">
-                                <TextBox Text="{Binding AnthropicKeyInput}" 
-                                        Watermark="sk-ant-..."
-                                        PasswordChar="•"/>
-                                <Button Content="Add" 
-                                       Click="AddAnthropicKey_Click"
-                                       HorizontalAlignment="Right"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
+                            <TextBlock Text="OpenRouter" FontWeight="Bold" FontSize="14"/>
 
-                    <!-- OpenAI -->
-                    <Border BorderBrush="Gray" BorderThickness="1" Padding="15" CornerRadius="5">
-                        <StackPanel Spacing="10">
-                            <TextBlock Text="OpenAI" FontWeight="Bold" FontSize="14"/>
-                            
-                            <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding HasOpenaiKey}">
+                            <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding HasOpenRouterKey}">
                                 <TextBlock Grid.Column="0" Text="Current Key:" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                <TextBlock Grid.Column="1" 
-                                          Text="{Binding OpenaiKeyDisplay}" 
+                                <TextBlock Grid.Column="1"
+                                          Text="{Binding OpenRouterKeyDisplay}"
                                           VerticalAlignment="Center"
                                           FontFamily="Consolas,Courier New,monospace"/>
-                                <Button Grid.Column="2" 
-                                       Content="Delete" 
-                                       Click="DeleteOpenaiKey_Click"
+                                <Button Grid.Column="2"
+                                       Content="Delete"
+                                       Click="DeleteOpenRouterKey_Click"
                                        Margin="10,0,0,0"/>
                             </Grid>
-                            
-                            <StackPanel Spacing="10" IsVisible="{Binding !HasOpenaiKey}">
-                                <TextBox Text="{Binding OpenaiKeyInput}" 
-                                        Watermark="sk-..."
-                                        PasswordChar="•"/>
-                                <Button Content="Add" 
-                                       Click="AddOpenaiKey_Click"
-                                       HorizontalAlignment="Right"/>
-                            </StackPanel>
-                        </StackPanel>
-                    </Border>
 
-                    <!-- DeepSeek -->
-                    <Border BorderBrush="Gray" BorderThickness="1" Padding="15" CornerRadius="5">
-                        <StackPanel Spacing="10">
-                            <TextBlock Text="DeepSeek" FontWeight="Bold" FontSize="14"/>
-                            
-                            <Grid ColumnDefinitions="Auto,*,Auto" IsVisible="{Binding HasDeepseekKey}">
-                                <TextBlock Grid.Column="0" Text="Current Key:" VerticalAlignment="Center" Margin="0,0,10,0"/>
-                                <TextBlock Grid.Column="1" 
-                                          Text="{Binding DeepseekKeyDisplay}" 
-                                          VerticalAlignment="Center"
-                                          FontFamily="Consolas,Courier New,monospace"/>
-                                <Button Grid.Column="2" 
-                                       Content="Delete" 
-                                       Click="DeleteDeepseekKey_Click"
-                                       Margin="10,0,0,0"/>
-                            </Grid>
-                            
-                            <StackPanel Spacing="10" IsVisible="{Binding !HasDeepseekKey}">
-                                <TextBox Text="{Binding DeepseekKeyInput}" 
-                                        Watermark="sk-..."
+                            <StackPanel Spacing="10" IsVisible="{Binding !HasOpenRouterKey}">
+                                <TextBox Text="{Binding OpenRouterKeyInput}"
+                                        Watermark="sk-or-..."
                                         PasswordChar="•"/>
-                                <Button Content="Add" 
-                                       Click="AddDeepseekKey_Click"
+                                <Button Content="Add"
+                                       Click="AddOpenRouterKey_Click"
                                        HorizontalAlignment="Right"/>
                             </StackPanel>
                         </StackPanel>

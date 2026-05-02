@@ -10,40 +10,46 @@ using Omoi.Models;
 
 namespace Omoi.Services;
 
-public class OpenAiClient : IModelProvider, IVectorProvider
+public class OpenRouterClient : IModelProvider, IVectorProvider
 {
     private readonly HttpClient _httpClient;
-    private const string BASE_URL = "https://api.openai.com/v1";
+    private const string BASE_URL = "https://openrouter.ai/api/v1";
+    private const string EMBEDDING_MODEL = "openai/text-embedding-3-large";
 
-    public OpenAiClient()
+    public OpenRouterClient()
     {
         _httpClient = new HttpClient();
         _httpClient.BaseAddress = new Uri(BASE_URL);
+        _httpClient.DefaultRequestHeaders.Add("HTTP-Referer", "https://omoi.app");
+        _httpClient.DefaultRequestHeaders.Add("X-Title", "Omoi");
     }
 
     public void SetApiKey(string apiKey)
     {
-        _httpClient.DefaultRequestHeaders.Clear();
+        _httpClient.DefaultRequestHeaders.Remove("Authorization");
         _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
     }
 
     public async Task<List<ModelInfo>> GetAvailableModelsAsync()
     {
-        var models = new List<ModelInfo>();
-        
-        foreach (var (modelId, capabilities) in OpenAiModelRegistry.GetAllModels())
-        {
-            models.Add(new ModelInfo
+        var response = await _httpClient.GetAsync($"{BASE_URL}/models");
+        response.EnsureSuccessStatusCode();
+
+        var responseJson = await response.Content.ReadAsStringAsync();
+        var result = JsonSerializer.Deserialize<ModelsResponse>(responseJson);
+
+        return result?.Data
+            .Select(m => new ModelInfo
             {
-                Id = modelId,
-                DisplayName = FormatDisplayName(modelId),
+                Id = m.Id,
+                DisplayName = m.Name,
                 Type = "model",
-                CreatedAt = DateTime.UtcNow,
-                Categories = new List<string>(capabilities.Categories)
-            });
-        }
-        
-        return await Task.FromResult(models);
+                CreatedAt = DateTimeOffset.FromUnixTimeSeconds(m.Created).UtcDateTime,
+                Categories = IsEmbeddingModel(m.Id)
+                    ? new List<string> { "vector" }
+                    : new List<string> { "chat", "thought", "memory" }
+            })
+            .ToList() ?? new List<ModelInfo>();
     }
 
     public async Task<string> SendMessageAsync(
@@ -51,29 +57,13 @@ public class OpenAiClient : IModelProvider, IVectorProvider
         List<Message> messages,
         string? systemPrompt = null)
     {
-        var capabilities = OpenAiModelRegistry.GetCapabilities(config.Model);
-        
-        if (capabilities == null)
-        {
-            throw new InvalidOperationException($"Model {config.Model} is not supported");
-        }
-
-        if (capabilities.Endpoint != OpenAiEndpoint.ChatCompletions)
-        {
-            throw new InvalidOperationException($"Model {config.Model} does not support chat completions endpoint");
-        }
-
         var apiMessages = new List<object>();
-        
+
         if (!string.IsNullOrWhiteSpace(systemPrompt))
         {
-            apiMessages.Add(new
-            {
-                role = "system",
-                content = systemPrompt
-            });
+            apiMessages.Add(new { role = "system", content = systemPrompt });
         }
-        
+
         apiMessages.AddRange(messages.Select(m => new
         {
             role = m.IsUser ? "user" : "assistant",
@@ -90,20 +80,20 @@ public class OpenAiClient : IModelProvider, IVectorProvider
         var json = JsonSerializer.Serialize(request);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        var response = await _httpClient.PostAsync("https://api.openai.com/v1/chat/completions", content);
-        
+        var response = await _httpClient.PostAsync($"{BASE_URL}/chat/completions", content);
+
         if (!response.IsSuccessStatusCode)
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             var errorJson = JsonSerializer.Deserialize<JsonDocument>(errorContent);
-            var errorMessage = errorJson?.RootElement.GetProperty("error").GetProperty("message").GetString() 
+            var errorMessage = errorJson?.RootElement.GetProperty("error").GetProperty("message").GetString()
                 ?? "Unknown API error";
             throw new HttpRequestException(errorMessage);
         }
-        
+
         var responseJson = await response.Content.ReadAsStringAsync();
         var result = JsonSerializer.Deserialize<ChatCompletionResponse>(responseJson);
-        
+
         return result?.Choices?.FirstOrDefault()?.Message?.Content ?? string.Empty;
     }
 
@@ -112,45 +102,49 @@ public class OpenAiClient : IModelProvider, IVectorProvider
         var request = new
         {
             input = text,
-            model = "text-embedding-3-large",
+            model = EMBEDDING_MODEL,
             dimensions = 3072
         };
 
         var json = JsonSerializer.Serialize(request);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
-        var response = await _httpClient.PostAsync("https://api.openai.com/v1/embeddings", content);
-        
+        var response = await _httpClient.PostAsync($"{BASE_URL}/embeddings", content);
+
         if (!response.IsSuccessStatusCode)
         {
             var errorContent = await response.Content.ReadAsStringAsync();
             var errorJson = JsonSerializer.Deserialize<JsonDocument>(errorContent);
-            var errorMessage = errorJson?.RootElement.GetProperty("error").GetProperty("message").GetString() 
+            var errorMessage = errorJson?.RootElement.GetProperty("error").GetProperty("message").GetString()
                 ?? "Unknown API error";
             throw new HttpRequestException(errorMessage);
         }
-        
+
         var responseJson = await response.Content.ReadAsStringAsync();
         var result = JsonSerializer.Deserialize<EmbeddingResponse>(responseJson);
-        
+
         return result?.Data?.FirstOrDefault()?.Embedding ?? Array.Empty<float>();
     }
 
-    private string FormatDisplayName(string modelId)
+    private static bool IsEmbeddingModel(string modelId) =>
+        modelId.Contains("embedding", StringComparison.OrdinalIgnoreCase);
+
+    private class ModelsResponse
     {
-        return modelId switch
-        {
-            "gpt-4.1" => "GPT-4.1",
-            "gpt-4.1-mini" => "GPT-4.1 Mini",
-            "gpt-4.1-nano" => "GPT-4.1 Nano",
-            "gpt-4o" => "GPT-4o",
-            "gpt-4o-mini" => "GPT-4o Mini",
-            "gpt-3.5-turbo" => "GPT-3.5 Turbo",
-            "text-embedding-3-large" => "Text Embedding 3 Large",
-            "text-embedding-3-small" => "Text Embedding 3 Small",
-            "text-embedding-ada-002" => "Text Embedding Ada 002",
-            _ => modelId
-        };
+        [JsonPropertyName("data")]
+        public List<OpenRouterModel> Data { get; set; } = new();
+    }
+
+    private class OpenRouterModel
+    {
+        [JsonPropertyName("id")]
+        public string Id { get; set; } = string.Empty;
+
+        [JsonPropertyName("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonPropertyName("created")]
+        public long Created { get; set; }
     }
 
     private class ChatCompletionResponse

@@ -25,18 +25,16 @@ public partial class App : Application
         {
             var configService = new ConfigService();
             var credentialsService = new CredentialsService();
-            var anthropicClient = new AnthropicClient();
-            var openAiClient = new OpenAiClient();
-            var deepSeekClient = new DeepSeekClient();
+            var openRouterClient = new OpenRouterClient();
             var supabaseClient = new SupabaseClient();
             var qdrantClient = new QdrantClient();
             var logger = new ThoughtProcessLogger();
             var conversationService = new ConversationService();
-            
-            var providerResolver = new ModelProviderResolver(anthropicClient, openAiClient, deepSeekClient);
-            var vectorProviderResolver = new VectorProviderResolver(openAiClient);
+
+            var providerResolver = new ModelProviderResolver(openRouterClient);
+            var vectorProviderResolver = new VectorProviderResolver(openRouterClient);
             var vectorStorageResolver = new VectorStorageResolver(supabaseClient, qdrantClient);
-            
+
             var contextBuilder = new ChatContextBuilder(vectorProviderResolver, vectorStorageResolver, configService, logger);
             var modeDetector = new ModeDetector(providerResolver, logger, configService);
 
@@ -51,30 +49,18 @@ public partial class App : Application
             );
             var chatService = new ChatService(quadeAgent, conversationService, logger);
 
-            var hasApiKey = await credentialsService.HasApiKeyAsync(CredentialsService.ANTHROPIC);
-            
+            var hasApiKey = await credentialsService.HasApiKeyAsync(CredentialsService.OPENROUTER);
+
             if (!hasApiKey)
             {
                 var welcomeWindow = new WelcomeWindow();
                 welcomeWindow.Show();
             }
 
-            var anthropicKey = await credentialsService.GetApiKeyAsync(CredentialsService.ANTHROPIC);
-            if (!string.IsNullOrWhiteSpace(anthropicKey))
+            var openRouterKey = await credentialsService.GetApiKeyAsync(CredentialsService.OPENROUTER);
+            if (!string.IsNullOrWhiteSpace(openRouterKey))
             {
-                anthropicClient.SetApiKey(anthropicKey);
-            }
-
-            var openAiKey = await credentialsService.GetApiKeyAsync(CredentialsService.OPENAI);
-            if (!string.IsNullOrWhiteSpace(openAiKey))
-            {
-                openAiClient.SetApiKey(openAiKey);
-            }
-
-            var deepSeekKey = await credentialsService.GetApiKeyAsync(CredentialsService.DEEPSEEK);
-            if (!string.IsNullOrWhiteSpace(deepSeekKey))
-            {
-                deepSeekClient.SetApiKey(deepSeekKey);
+                openRouterClient.SetApiKey(openRouterKey);
             }
 
             var appConfig = await configService.LoadConfigAsync();
@@ -83,7 +69,7 @@ public partial class App : Application
             if (!string.IsNullOrWhiteSpace(supabaseKey) && !string.IsNullOrWhiteSpace(appConfig.SupabaseUrl))
             {
                 supabaseClient.SetApiKey(supabaseKey, appConfig.SupabaseUrl);
-                
+
                 if (appConfig.SelectedVectorStorage == Omoi.Models.VectorStorageProvider.Supabase)
                 {
                     try
@@ -101,7 +87,7 @@ public partial class App : Application
             if (!string.IsNullOrWhiteSpace(qdrantKey) && !string.IsNullOrWhiteSpace(appConfig.QdrantUrl))
             {
                 qdrantClient.SetApiKey(qdrantKey, appConfig.QdrantUrl);
-                
+
                 if (appConfig.SelectedVectorStorage == Omoi.Models.VectorStorageProvider.Qdrant)
                 {
                     try
@@ -116,12 +102,10 @@ public partial class App : Application
             }
 
             var viewModel = new MainWindowViewModel(
-                chatService, 
-                configService, 
-                anthropicClient,
-                openAiClient,
-                deepSeekClient,
-                logger, 
+                chatService,
+                configService,
+                openRouterClient,
+                logger,
                 conversationService,
                 credentialsService);
 
@@ -139,7 +123,7 @@ public partial class App : Application
             if (hasCustomPosition || hasCustomSize)
             {
                 desktop.MainWindow.WindowStartupLocation = WindowStartupLocation.Manual;
-                
+
                 if (hasCustomSize)
                 {
                     desktop.MainWindow.Width = config.MainWindowWidth;

@@ -9,26 +9,20 @@ namespace Omoi.ViewModels;
 public class SettingsWindowViewModel : ViewModelBase
 {
     private readonly CredentialsService _credentialsService;
-    private readonly AnthropicClient _anthropicClient;
+    private readonly OpenRouterClient _openRouterClient;
     private readonly ConfigService _configService;
 
-    private string _anthropicKeyDisplay = "(not set)";
-    private string _openaiKeyDisplay = "(not set)";
-    private string _deepseekKeyDisplay = "(not set)";
+    private string _openRouterKeyDisplay = "(not set)";
     private string _anlatanKeyDisplay = "(not set)";
     private string _supabaseKeyDisplay = "(not set)";
     private string _qdrantKeyDisplay = "(not set)";
 
-    private bool _hasAnthropicKey;
-    private bool _hasOpenaiKey;
-    private bool _hasDeepseekKey;
+    private bool _hasOpenRouterKey;
     private bool _hasAnlatanKey;
     private bool _hasSupabaseKey;
     private bool _hasQdrantKey;
 
-    private string _anthropicKeyInput = string.Empty;
-    private string _openaiKeyInput = string.Empty;
-    private string _deepseekKeyInput = string.Empty;
+    private string _openRouterKeyInput = string.Empty;
     private string _anlatanKeyInput = string.Empty;
     private string _supabaseKeyInput = string.Empty;
     private string _qdrantKeyInput = string.Empty;
@@ -39,22 +33,10 @@ public class SettingsWindowViewModel : ViewModelBase
     private bool _isSupabaseSelected;
     private bool _isQdrantSelected;
 
-    public string AnthropicKeyDisplay
+    public string OpenRouterKeyDisplay
     {
-        get => _anthropicKeyDisplay;
-        set => this.RaiseAndSetIfChanged(ref _anthropicKeyDisplay, value);
-    }
-
-    public string OpenaiKeyDisplay
-    {
-        get => _openaiKeyDisplay;
-        set => this.RaiseAndSetIfChanged(ref _openaiKeyDisplay, value);
-    }
-
-    public string DeepseekKeyDisplay
-    {
-        get => _deepseekKeyDisplay;
-        set => this.RaiseAndSetIfChanged(ref _deepseekKeyDisplay, value);
+        get => _openRouterKeyDisplay;
+        set => this.RaiseAndSetIfChanged(ref _openRouterKeyDisplay, value);
     }
 
     public string AnlatanKeyDisplay
@@ -75,22 +57,10 @@ public class SettingsWindowViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _qdrantKeyDisplay, value);
     }
 
-    public bool HasAnthropicKey
+    public bool HasOpenRouterKey
     {
-        get => _hasAnthropicKey;
-        set => this.RaiseAndSetIfChanged(ref _hasAnthropicKey, value);
-    }
-
-    public bool HasOpenaiKey
-    {
-        get => _hasOpenaiKey;
-        set => this.RaiseAndSetIfChanged(ref _hasOpenaiKey, value);
-    }
-
-    public bool HasDeepseekKey
-    {
-        get => _hasDeepseekKey;
-        set => this.RaiseAndSetIfChanged(ref _hasDeepseekKey, value);
+        get => _hasOpenRouterKey;
+        set => this.RaiseAndSetIfChanged(ref _hasOpenRouterKey, value);
     }
 
     public bool HasAnlatanKey
@@ -111,22 +81,10 @@ public class SettingsWindowViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _hasQdrantKey, value);
     }
 
-    public string AnthropicKeyInput
+    public string OpenRouterKeyInput
     {
-        get => _anthropicKeyInput;
-        set => this.RaiseAndSetIfChanged(ref _anthropicKeyInput, value);
-    }
-
-    public string OpenaiKeyInput
-    {
-        get => _openaiKeyInput;
-        set => this.RaiseAndSetIfChanged(ref _openaiKeyInput, value);
-    }
-
-    public string DeepseekKeyInput
-    {
-        get => _deepseekKeyInput;
-        set => this.RaiseAndSetIfChanged(ref _deepseekKeyInput, value);
+        get => _openRouterKeyInput;
+        set => this.RaiseAndSetIfChanged(ref _openRouterKeyInput, value);
     }
 
     public string AnlatanKeyInput
@@ -171,18 +129,16 @@ public class SettingsWindowViewModel : ViewModelBase
         set => this.RaiseAndSetIfChanged(ref _isQdrantSelected, value);
     }
 
-    public SettingsWindowViewModel(CredentialsService credentialsService, AnthropicClient anthropicClient, ConfigService configService)
+    public SettingsWindowViewModel(CredentialsService credentialsService, OpenRouterClient openRouterClient, ConfigService configService)
     {
         _credentialsService = credentialsService;
-        _anthropicClient = anthropicClient;
+        _openRouterClient = openRouterClient;
         _configService = configService;
     }
 
     public async Task LoadKeysAsync()
     {
-        await UpdateKeyDisplayAsync(CredentialsService.ANTHROPIC);
-        await UpdateKeyDisplayAsync(CredentialsService.OPENAI);
-        await UpdateKeyDisplayAsync(CredentialsService.DEEPSEEK);
+        await UpdateKeyDisplayAsync(CredentialsService.OPENROUTER);
         await UpdateKeyDisplayAsync(CredentialsService.ANLATAN);
         await UpdateKeyDisplayAsync(CredentialsService.SUPABASE);
         await UpdateKeyDisplayAsync(CredentialsService.QDRANT);
@@ -197,44 +153,11 @@ public class SettingsWindowViewModel : ViewModelBase
         QdrantUrlInput = config.QdrantUrl;
     }
 
-    private async Task LoadStorageProviderAsync()
-    {
-        var config = await _configService.LoadConfigAsync();
-        IsSupabaseSelected = config.SelectedVectorStorage == VectorStorageProvider.Supabase;
-        IsQdrantSelected = config.SelectedVectorStorage == VectorStorageProvider.Qdrant;
-    }
-
-    public async Task SelectStorageProviderAsync(VectorStorageProvider provider)
-    {
-        var config = await _configService.LoadConfigAsync();
-        config.SelectedVectorStorage = provider;
-        await _configService.SaveConfigAsync(config);
-
-        IsSupabaseSelected = provider == VectorStorageProvider.Supabase;
-        IsQdrantSelected = provider == VectorStorageProvider.Qdrant;
-    }
-
-    public async Task SaveSupabaseUrlAsync()
-    {
-        var config = await _configService.LoadConfigAsync();
-        config.SupabaseUrl = SupabaseUrlInput.Trim();
-        await _configService.SaveConfigAsync(config);
-    }
-
-    public async Task SaveQdrantUrlAsync()
-    {
-        var config = await _configService.LoadConfigAsync();
-        config.QdrantUrl = QdrantUrlInput.Trim();
-        await _configService.SaveConfigAsync(config);
-    }
-
     public async Task AddOrReplaceKeyAsync(string provider)
     {
         string keyInput = provider switch
         {
-            CredentialsService.ANTHROPIC => AnthropicKeyInput,
-            CredentialsService.OPENAI => OpenaiKeyInput,
-            CredentialsService.DEEPSEEK => DeepseekKeyInput,
+            CredentialsService.OPENROUTER => OpenRouterKeyInput,
             CredentialsService.ANLATAN => AnlatanKeyInput,
             CredentialsService.SUPABASE => SupabaseKeyInput,
             CredentialsService.QDRANT => QdrantKeyInput,
@@ -246,9 +169,9 @@ public class SettingsWindowViewModel : ViewModelBase
 
         await _credentialsService.SetApiKeyAsync(provider, keyInput);
 
-        if (provider == CredentialsService.ANTHROPIC)
+        if (provider == CredentialsService.OPENROUTER)
         {
-            _anthropicClient.SetApiKey(keyInput);
+            _openRouterClient.SetApiKey(keyInput);
         }
 
         ClearInput(provider);
@@ -269,17 +192,9 @@ public class SettingsWindowViewModel : ViewModelBase
 
         switch (provider)
         {
-            case CredentialsService.ANTHROPIC:
-                HasAnthropicKey = hasKey;
-                AnthropicKeyDisplay = display;
-                break;
-            case CredentialsService.OPENAI:
-                HasOpenaiKey = hasKey;
-                OpenaiKeyDisplay = display;
-                break;
-            case CredentialsService.DEEPSEEK:
-                HasDeepseekKey = hasKey;
-                DeepseekKeyDisplay = display;
+            case CredentialsService.OPENROUTER:
+                HasOpenRouterKey = hasKey;
+                OpenRouterKeyDisplay = display;
                 break;
             case CredentialsService.ANLATAN:
                 HasAnlatanKey = hasKey;
@@ -300,14 +215,8 @@ public class SettingsWindowViewModel : ViewModelBase
     {
         switch (provider)
         {
-            case CredentialsService.ANTHROPIC:
-                AnthropicKeyInput = string.Empty;
-                break;
-            case CredentialsService.OPENAI:
-                OpenaiKeyInput = string.Empty;
-                break;
-            case CredentialsService.DEEPSEEK:
-                DeepseekKeyInput = string.Empty;
+            case CredentialsService.OPENROUTER:
+                OpenRouterKeyInput = string.Empty;
                 break;
             case CredentialsService.ANLATAN:
                 AnlatanKeyInput = string.Empty;
@@ -319,5 +228,34 @@ public class SettingsWindowViewModel : ViewModelBase
                 QdrantKeyInput = string.Empty;
                 break;
         }
+    }
+
+    public async Task SaveSupabaseUrlAsync()
+    {
+        var config = await _configService.LoadConfigAsync();
+        config.SupabaseUrl = SupabaseUrlInput;
+        await _configService.SaveConfigAsync(config);
+    }
+
+    public async Task SaveQdrantUrlAsync()
+    {
+        var config = await _configService.LoadConfigAsync();
+        config.QdrantUrl = QdrantUrlInput;
+        await _configService.SaveConfigAsync(config);
+    }
+
+    public async Task SelectStorageProviderAsync(VectorStorageProvider provider)
+    {
+        var config = await _configService.LoadConfigAsync();
+        config.SelectedVectorStorage = provider;
+        await _configService.SaveConfigAsync(config);
+        await LoadStorageProviderAsync();
+    }
+
+    private async Task LoadStorageProviderAsync()
+    {
+        var config = await _configService.LoadConfigAsync();
+        IsSupabaseSelected = config.SelectedVectorStorage == VectorStorageProvider.Supabase;
+        IsQdrantSelected = config.SelectedVectorStorage == VectorStorageProvider.Qdrant;
     }
 }

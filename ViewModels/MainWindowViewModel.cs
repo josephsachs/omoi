@@ -15,9 +15,7 @@ public class MainWindowViewModel : ViewModelBase
 {
     private readonly ChatService _chatService;
     private readonly ConfigService _configService;
-    private readonly AnthropicClient _anthropicClient;
-    private readonly OpenAiClient _openAiClient;
-    private readonly DeepSeekClient _deepSeekClient;
+    private readonly OpenRouterClient _openRouterClient;
     private readonly ThoughtProcessLogger _logger;
     private readonly ConversationService _conversationService;
     private readonly CredentialsService _credentialsService;
@@ -38,10 +36,8 @@ public class MainWindowViewModel : ViewModelBase
     
     public ThoughtProcessLogger Logger => _logger;
     public CredentialsService CredentialsService => _credentialsService;
-    
-    public AnthropicClient GetAnthropicClient() => _anthropicClient;
-    public OpenAiClient GetOpenAiClient() => _openAiClient;
-    public DeepSeekClient GetDeepSeekClient() => _deepSeekClient;
+
+    public OpenRouterClient GetOpenRouterClient() => _openRouterClient;
 
     public string InputMessage
     {
@@ -104,18 +100,14 @@ public class MainWindowViewModel : ViewModelBase
     public MainWindowViewModel(
         ChatService chatService,
         ConfigService configService,
-        AnthropicClient anthropicClient,
-        OpenAiClient openAiClient,
-        DeepSeekClient deepSeekClient,
+        OpenRouterClient openRouterClient,
         ThoughtProcessLogger logger,
         ConversationService conversationService,
         CredentialsService credentialsService)
     {
         _chatService = chatService;
         _configService = configService;
-        _anthropicClient = anthropicClient;
-        _openAiClient = openAiClient;
-        _deepSeekClient = deepSeekClient;
+        _openRouterClient = openRouterClient;
         _logger = logger;
         _conversationService = conversationService;
         _credentialsService = credentialsService;
@@ -149,46 +141,21 @@ public class MainWindowViewModel : ViewModelBase
     {
         try
         {
-            var allModels = new List<ModelInfo>();
-            
-            var anthropicModels = await _anthropicClient.GetAvailableModelsAsync();
-            foreach (var model in anthropicModels)
+            var key = await _credentialsService.GetApiKeyAsync(CredentialsService.OPENROUTER);
+            if (!string.IsNullOrWhiteSpace(key))
             {
-                model.Categories = new List<string> { "chat", "thought", "memory" };
+                _openRouterClient.SetApiKey(key);
             }
-            allModels.AddRange(anthropicModels);
-            
-            var hasOpenAiKey = await _credentialsService.HasApiKeyAsync(CredentialsService.OPENAI);
-            if (hasOpenAiKey)
-            {
-                var openAiKey = await _credentialsService.GetApiKeyAsync(CredentialsService.OPENAI);
-                if (!string.IsNullOrWhiteSpace(openAiKey))
-                {
-                    _openAiClient.SetApiKey(openAiKey);
-                    var openAiModels = await _openAiClient.GetAvailableModelsAsync();
-                    allModels.AddRange(openAiModels);
-                }
-            }
-            
-            var hasDeepSeekKey = await _credentialsService.HasApiKeyAsync(CredentialsService.DEEPSEEK);
-            if (hasDeepSeekKey)
-            {
-                var deepSeekKey = await _credentialsService.GetApiKeyAsync(CredentialsService.DEEPSEEK);
-                if (!string.IsNullOrWhiteSpace(deepSeekKey))
-                {
-                    _deepSeekClient.SetApiKey(deepSeekKey);
-                    var deepSeekModels = await _deepSeekClient.GetAvailableModelsAsync();
-                    allModels.AddRange(deepSeekModels);
-                }
-            }
-            
+
+            var models = await _openRouterClient.GetAvailableModelsAsync();
+
             AvailableModels.Clear();
-            foreach (var model in allModels)
+            foreach (var model in models)
             {
                 AvailableModels.Add(model);
             }
-            
-            await _configService.SaveModelsAsync(allModels);
+
+            await _configService.SaveModelsAsync(models);
         }
         catch (Exception ex)
         {
