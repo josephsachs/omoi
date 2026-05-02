@@ -32,13 +32,22 @@ public class OpenRouterClient : IModelProvider, IVectorProvider
 
     public async Task<List<ModelInfo>> GetAvailableModelsAsync()
     {
-        var response = await _httpClient.GetAsync($"{BASE_URL}/models");
-        response.EnsureSuccessStatusCode();
+        var chatTask = _httpClient.GetAsync($"{BASE_URL}/models");
+        var embeddingTask = _httpClient.GetAsync($"{BASE_URL}/embeddings/models");
 
-        var responseJson = await response.Content.ReadAsStringAsync();
-        var result = JsonSerializer.Deserialize<ModelsResponse>(responseJson);
+        await Task.WhenAll(chatTask, embeddingTask);
 
-        return result?.Data
+        var chatResponse = await chatTask;
+        chatResponse.EnsureSuccessStatusCode();
+        var chatJson = await chatResponse.Content.ReadAsStringAsync();
+        var chatModels = JsonSerializer.Deserialize<ModelsResponse>(chatJson)?.Data ?? new List<OpenRouterModel>();
+
+        var embeddingResponse = await embeddingTask;
+        embeddingResponse.EnsureSuccessStatusCode();
+        var embeddingJson = await embeddingResponse.Content.ReadAsStringAsync();
+        var embeddingModels = JsonSerializer.Deserialize<ModelsResponse>(embeddingJson)?.Data ?? new List<OpenRouterModel>();
+
+        return chatModels.Concat(embeddingModels)
             .Select(m => new ModelInfo
             {
                 Id = m.Id,
@@ -48,7 +57,7 @@ public class OpenRouterClient : IModelProvider, IVectorProvider
                 Categories = GetCategories(m)
             })
             .Where(m => m.Categories.Count > 0)
-            .ToList() ?? new List<ModelInfo>();
+            .ToList();
     }
 
     private static List<string> GetCategories(OpenRouterModel model)
