@@ -55,7 +55,7 @@ public class ChatContextBuilder
         try
         {
             var vectorProvider = _vectorProviderResolver.GetProviderForModel(config.VectorModel);
-            var embedding = await vectorProvider.GetEmbeddingAsync(userMessage);
+            var embedding = await vectorProvider.GetEmbeddingAsync(userMessage, config.VectorModel);
 
             var storage = _vectorStorageResolver.GetStorage(config.SelectedVectorStorage);
             var topK = config.TopKMemories;

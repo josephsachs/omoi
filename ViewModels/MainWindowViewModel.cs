@@ -124,7 +124,7 @@ public class MainWindowViewModel : ViewModelBase
         else
         {
             AvailableModels.Clear();
-            foreach (var model in models)
+            foreach (var model in models.OrderBy(m => m.DisplayName, StringComparer.OrdinalIgnoreCase))
             {
                 AvailableModels.Add(model);
             }
@@ -150,7 +150,7 @@ public class MainWindowViewModel : ViewModelBase
             var models = await _openRouterClient.GetAvailableModelsAsync();
 
             AvailableModels.Clear();
-            foreach (var model in models)
+            foreach (var model in models.OrderBy(m => m.DisplayName, StringComparer.OrdinalIgnoreCase))
             {
                 AvailableModels.Add(model);
             }

@@ -108,13 +108,12 @@ public class OpenAiClient : IModelProvider, IVectorProvider
         return result?.Choices?.FirstOrDefault()?.Message?.Content ?? string.Empty;
     }
 
-    public async Task<float[]> GetEmbeddingAsync(string text)
+    public async Task<float[]> GetEmbeddingAsync(string text, string model)
     {
         var request = new
         {
             input = text,
-            model = "text-embedding-3-large",
-            dimensions = 3072
+            model = model
         };
 
         var json = JsonSerializer.Serialize(request);

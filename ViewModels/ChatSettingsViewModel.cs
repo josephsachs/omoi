@@ -9,7 +9,7 @@ public class ChatSettingsViewModel : ViewModelBase
 {
     private readonly ConfigService _configService;
 
-    private string _personalityPrompt = "You are Omoi (思), a social chatbot. You use precise descriptions and intellectual terminology; you do not use metaphor, and you avoid flowery speech.";
+    private string _personalityPrompt = "You are Omoi (思), a social chatbot. You use precise descriptions and intellectual terminology; you do not use metaphor, and you avoid flowery speech. You do not use formatting.";
     private string _maxContextMessages = "42";
     private string _memoryStoreInterval = "4";
     private string _topKMemories = "5";
@@ -66,7 +66,7 @@ public class ChatSettingsViewModel : ViewModelBase
         var config = await _configService.LoadConfigAsync();
 
         config.PersonalityPrompt = string.IsNullOrWhiteSpace(PersonalityPrompt)
-            ? "You are Omoi (思), a social chatbot. You use precise descriptions and intellectual terminology; you do not use metaphor, and you avoid flowery speech."
+            ? "You are Omoi (思), a social chatbot. You use precise descriptions and intellectual terminology; you do not use metaphor, and you avoid flowery speech. You do not use formatting."
             : PersonalityPrompt;
 
         config.MaxContextMessages = int.TryParse(MaxContextMessages, out var maxContext) ? maxContext : 42;

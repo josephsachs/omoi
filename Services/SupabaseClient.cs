@@ -14,7 +14,6 @@ public class SupabaseClient : IVectorStorage
     private readonly HttpClient _httpClient;
     private string _supabaseUrl = string.Empty;
     private const string MEMORIES_TABLE = "memories";
-    private const int VECTOR_DIMENSIONS = 3072;
     private bool _tableInitialized = false;
 
     public SupabaseClient()
@@ -30,7 +29,7 @@ public class SupabaseClient : IVectorStorage
         _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {apiKey}");
     }
 
-    public async Task EnsureReadyAsync()
+    public async Task EnsureReadyAsync(int dimensions)
     {
         if (_tableInitialized)
             return;
@@ -58,13 +57,6 @@ public class SupabaseClient : IVectorStorage
 
     public async Task StoreMemoryAsync(string content, float[] embedding)
     {
-        if (embedding.Length != VECTOR_DIMENSIONS)
-        {
-            throw new ArgumentException(
-                $"Embedding dimension mismatch. Expected {VECTOR_DIMENSIONS}, got {embedding.Length}"
-            );
-        }
-
         var embeddingString = "[" + string.Join(",", embedding.Select(f => f.ToString("G"))) + "]";
 
         var record = new
@@ -93,13 +85,6 @@ public class SupabaseClient : IVectorStorage
         int topK = 5,
         float threshold = 0.7f)
     {
-        if (queryEmbedding.Length != VECTOR_DIMENSIONS)
-        {
-            throw new ArgumentException(
-                $"Embedding dimension mismatch. Expected {VECTOR_DIMENSIONS}, got {queryEmbedding.Length}"
-            );
-        }
-
         var embeddingString = "[" + string.Join(",", queryEmbedding.Select(f => f.ToString("G"))) + "]";
 
         var rpcParams = new

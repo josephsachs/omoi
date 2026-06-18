@@ -6,7 +6,7 @@ namespace Omoi.Services;
 public interface IVectorStorage
 {
     void SetApiKey(string apiKey, string url);
-    Task EnsureReadyAsync();
+    Task EnsureReadyAsync(int dimensions);
     Task StoreMemoryAsync(string content, float[] embedding);
     Task<List<Memory>> SearchSimilarMemoriesAsync(float[] queryEmbedding, int topK = 5, float threshold = 0.7f);
 }

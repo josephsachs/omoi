@@ -14,7 +14,6 @@ public class QdrantClient : IVectorStorage
     private readonly HttpClient _httpClient;
     private string _qdrantUrl = string.Empty;
     private const string COLLECTION_NAME = "memories";
-    private const int VECTOR_DIMENSIONS = 3072;
 
     public QdrantClient()
     {
@@ -28,10 +27,10 @@ public class QdrantClient : IVectorStorage
         _httpClient.DefaultRequestHeaders.Add("api-key", apiKey);
     }
 
-    public async Task EnsureReadyAsync()
+    public async Task EnsureReadyAsync(int dimensions)
     {
         var checkResponse = await _httpClient.GetAsync($"{_qdrantUrl}/collections/{COLLECTION_NAME}");
-        
+
         if (checkResponse.IsSuccessStatusCode)
         {
             return;
@@ -41,7 +40,7 @@ public class QdrantClient : IVectorStorage
         {
             vectors = new
             {
-                size = VECTOR_DIMENSIONS,
+                size = dimensions,
                 distance = "Cosine"
             }
         };
@@ -63,13 +62,6 @@ public class QdrantClient : IVectorStorage
 
     public async Task StoreMemoryAsync(string content, float[] embedding)
     {
-        if (embedding.Length != VECTOR_DIMENSIONS)
-        {
-            throw new ArgumentException(
-                $"Embedding dimension mismatch. Expected {VECTOR_DIMENSIONS}, got {embedding.Length}"
-            );
-        }
-
         var pointId = Guid.NewGuid().ToString();
         var point = new
         {
@@ -108,13 +100,6 @@ public class QdrantClient : IVectorStorage
         int topK = 5,
         float threshold = 0.7f)
     {
-        if (queryEmbedding.Length != VECTOR_DIMENSIONS)
-        {
-            throw new ArgumentException(
-                $"Embedding dimension mismatch. Expected {VECTOR_DIMENSIONS}, got {queryEmbedding.Length}"
-            );
-        }
-
         var searchRequest = new
         {
             vector = queryEmbedding,

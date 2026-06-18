@@ -7,10 +7,10 @@ public static class ModeRegistry
 {
     private static readonly Dictionary<string, Func<ConversationMode>> _modes = new()
     {
+        ["Talk"] = () => new TalkMode(),
         ["Empower"] = () => new EmpowerMode(),
         ["Investigate"] = () => new InvestigateMode(),
         ["Opine"] = () => new OpineMode(),
-        ["Critique"] = () => new CritiqueMode(),
         ["Amuse"] = () => new AmuseMode()
     };
 
@@ -26,7 +26,7 @@ public static class ModeRegistry
 
     public static ConversationMode GetDefaultMode()
     {
-        return new EmpowerMode();
+        return new TalkMode();
     }
 
     public static IEnumerable<string> GetAllModeIdentifiers()

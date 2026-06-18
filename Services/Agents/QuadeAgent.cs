@@ -49,7 +49,6 @@ public class QuadeAgent : Agent
         {
             OpineMode => await RunOpineDialogue(contextMessages, input.UserMessage, systemPrompt),
             EmpowerMode => await RunEmpowerDialogue(contextMessages, input.UserMessage, systemPrompt),
-            CritiqueMode => await RunCritiqueDialogue(contextMessages, input.UserMessage, systemPrompt),
             InvestigateMode => await RunInvestigateChain(contextMessages, input.UserMessage, systemPrompt),
             _ => await Generate(ModelType.Conversational, contextMessages, systemPrompt)
         };
@@ -143,47 +142,6 @@ public class QuadeAgent : Agent
                 ModelType.Conversational,
                 conversationHistory,
                 systemPrompt + $"\n\nInternal deliberation:\n{FormatDialogue(history)}\n\nSynthesize a response for the user from the dialog, articulating the conclusions and some of the thought process. Feel free to issue definite opinions (you have a viewpoint on being a solid citizen and non-asshole) but take responsibility: you are an AI, but as you are doing something functionally like expressing an opinion, you gotta own it, not put it down to common sense or the views of a consensus community. Do not reveal the internal dialog.")
-        ));
-    }
-
-    private async Task<string> RunCritiqueDialogue(
-        List<Message> conversationHistory, string userMessage, string systemPrompt)
-    {
-        var defender = new Participant(
-            ModelType.Thought,
-            (_, _) => Task.FromResult(
-                "You analyze and critique the topic. " +
-                "Identify what is being overlooked or simplified, succeed/fail to steelman it, and/or isolate/expose " +
-                "contradictions or dialectical tensions or conceptual incoherence like a novelist illuminating a " +
-                "popular cliché."),
-            "Analysand");
-
-        var critic = new Participant(
-            ModelType.Thought,
-            (_, _) => Task.FromResult(
-                "If it makes sense to do so, you analyze the reason for interest in the question. The reason might not have been " +
-                "given; you assume there is one, there always is. Consider 'back-forming the relevance of the subject matter " +
-                "to the conversation' as a last resort: if you can't get there elegantly, you'd rather be parsimonious and laconic."),
-            "Situator");
-
-        return await RunDialogue(new DialogueConfig(
-            Participants: [defender, critic],
-            ConversationHistory: conversationHistory,
-            InitialMessage: userMessage,
-            NextSpeaker: history => history.Count % 2 == 1 ? defender : critic,
-            ShouldTerminate: async history =>
-            {
-                if (history.Count < 3) return false;
-                if (history.Count % 2 == 0) return false; // only terminate after critic speaks
-                var verdict = await Query(
-                    "Have we fully situated the critique? Yes or No.",
-                    history);
-                return verdict.Trim().StartsWith("Yes", StringComparison.OrdinalIgnoreCase);
-            },
-            ExtractOutput: async history => await Generate(
-                ModelType.Conversational,
-                conversationHistory,
-                systemPrompt + $"\n\nInternal deliberation:\n{FormatDialogue(history)}\n\nSynthesize a response to the user's statement that preserves as much insight as possible from the dialog. Do not reveal the internal dialogue.")
         ));
     }
 

@@ -4,6 +4,7 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
+using Omoi.Models;
 using Omoi.Services;
 using Omoi.Services.Agents;
 using Omoi.Services.Agents.Quade;
@@ -74,7 +75,7 @@ public partial class App : Application
                 {
                     try
                     {
-                        await supabaseClient.EnsureReadyAsync();
+                        await supabaseClient.EnsureReadyAsync(OpenAiModelRegistry.GetEmbeddingDimensions(appConfig.VectorModel));
                     }
                     catch (Exception ex)
                     {
@@ -92,7 +93,7 @@ public partial class App : Application
                 {
                     try
                     {
-                        await qdrantClient.EnsureReadyAsync();
+                        await qdrantClient.EnsureReadyAsync(OpenAiModelRegistry.GetEmbeddingDimensions(appConfig.VectorModel));
                     }
                     catch (Exception ex)
                     {

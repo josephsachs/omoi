@@ -15,7 +15,6 @@ public class OpenRouterClient : IModelProvider, IVectorProvider
     private readonly HttpClient _httpClient;
     private readonly ThoughtProcessLogger _logger;
     private const string BASE_URL = "https://openrouter.ai/api/v1";
-    private const string EMBEDDING_MODEL = "openai/text-embedding-3-large";
 
     public OpenRouterClient(ThoughtProcessLogger logger)
     {
@@ -135,13 +134,12 @@ public class OpenRouterClient : IModelProvider, IVectorProvider
         return result?.Choices?.FirstOrDefault()?.Message?.Content ?? string.Empty;
     }
 
-    public async Task<float[]> GetEmbeddingAsync(string text)
+    public async Task<float[]> GetEmbeddingAsync(string text, string model)
     {
         var request = new
         {
             input = text,
-            model = EMBEDDING_MODEL,
-            dimensions = 3072
+            model = model
         };
 
         var json = JsonSerializer.Serialize(request);
@@ -152,7 +150,7 @@ public class OpenRouterClient : IModelProvider, IVectorProvider
         if (!response.IsSuccessStatusCode)
         {
             var errorContent = await response.Content.ReadAsStringAsync();
-            _logger.LogError($"[API Error] Model: {EMBEDDING_MODEL}\n{errorContent}");
+            _logger.LogError($"[API Error] Model: {model}\n{errorContent}");
             var errorJson = JsonSerializer.Deserialize<JsonDocument>(errorContent);
             var errorMessage = errorJson?.RootElement.GetProperty("error").GetProperty("message").GetString()
                 ?? "Unknown API error";

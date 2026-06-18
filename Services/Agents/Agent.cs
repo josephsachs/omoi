@@ -139,7 +139,7 @@ public abstract class Agent
         {
             var vectorProvider = _vectorProviderResolver.GetProviderForModel(config.VectorModel);
             var vectorStorage = _vectorStorageResolver.GetStorage(config.SelectedVectorStorage);
-            var embedding = await vectorProvider.GetEmbeddingAsync(query);
+            var embedding = await vectorProvider.GetEmbeddingAsync(query, config.VectorModel);
             return await vectorStorage.SearchSimilarMemoriesAsync(embedding, topK, threshold);
         }
         catch
@@ -203,7 +203,7 @@ public abstract class Agent
             try
             {
                 Logger.LogInfo($"Embedding paragraph: {paragraph.Substring(0, Math.Min(50, paragraph.Length))}...");
-                var embedding = await vectorProvider.GetEmbeddingAsync(paragraph);
+                var embedding = await vectorProvider.GetEmbeddingAsync(paragraph, config.VectorModel);
                 Logger.LogInfo($"Storing memory with {embedding.Length}-dimensional embedding");
                 await vectorStorage.StoreMemoryAsync(paragraph, embedding);
                 successfulStores++;

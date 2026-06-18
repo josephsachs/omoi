@@ -89,4 +89,16 @@ public static class OpenAiModelRegistry
     {
         return _registry;
     }
+
+    public static int GetEmbeddingDimensions(string modelId)
+    {
+        var normalized = modelId.Contains('/') ? modelId.Split('/')[^1] : modelId;
+        return normalized switch
+        {
+            "text-embedding-3-large" => 3072,
+            "text-embedding-3-small" => 1536,
+            "text-embedding-ada-002" => 1536,
+            _ => 1536
+        };
+    }
 }
