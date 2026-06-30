@@ -22,7 +22,7 @@ public class ModeDetector
 
     private const string MODE_SELECT_IS_UNUSUAL = @"Is the user's message unusual, surprising, or out of the ordinary?";
 
-    private const int SALIENCE_THRESHOLD = 3;
+    private const int SALIENCE_THRESHOLD = 2;
 
     public ModeDetector(
         ModelProviderResolver providerResolver,
