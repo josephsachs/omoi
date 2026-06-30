@@ -1,5 +1,5 @@
 # Omoi #
-v1.5
+v1.6
 
 **Omoi** is an experimental chatbot intended for casual, speculative and intellectual conversation. It uses *modes* to promote flexibility and provide a responsive style of speech and analysis. Mode determines the system prompt for the current generation. The aim of Omoi is to serve as an alternative to the increasingly task- and information-focused styles of the official chatbots.
 
@@ -17,6 +17,9 @@ Future feature work will include a Google Drive integration to sync conversation
 
 The behavior of modes and memory are in active development so check back for updates!
 
+## Recommended settings
+For best quality the following models are currently recommended: Google Gemini Pro Latest (Chat), Google Gemini 2.5 Flash (Thought), Claude Sonnet 4 (Memory), OpenAI Text Embedding 3 Small (Vector).
+
 ## Version history
 1.0 - Interface, basic chat
  
@@ -30,3 +33,4 @@ The behavior of modes and memory are in active development so check back for upd
 
 1.5 - Replace provider clients with OpenRouter client
 
+1.6 - Salience-based classification
