@@ -11,7 +11,7 @@ Optional vector memory can be configured using:
 
 Omoi employs a chain of micro-prompts to classify the most recent message for mode selection; the configured Thought model is used for this. The console (View -> Show Thought Process) displays these in real-time, as well as system prompts and the memory storage process. Current available modes are Investigate, Opine and Talk; these are identified in the client UI by a kanji sign. Most of these modes use agentic patterns to produce their responses; I sought to design a bot that is comfortable being opinionated or temporarily off-topic.
 
-The conversation context is 8 exchanges plus any retrieved memories. 
+The conversation context and memory settings are configurable (Settings -> Chat).
 
 Future feature work will include a Google Drive integration to sync conversations across devices, mobile support, and markdown (pending a stable version of `Markdown.Avalonia` version 11.0.3).
 
